@@ -27,10 +27,10 @@ const Index = () => {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-secondary to-tvs-blue-light rounded-xl p-8 text-secondary-foreground">
+      {/* Hero Section - Green gradient like TVS Credit website */}
+      <div className="bg-gradient-to-r from-tvs-green to-tvs-green-dark rounded-xl p-8 text-white shadow-lg">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Digital Initiatives Portal</h1>
-        <p className="text-secondary-foreground/80 max-w-2xl">
+        <p className="text-white/90 max-w-2xl">
           Discover and explore TVS Credit's digital initiatives, partner integrations, and API documentation
         </p>
       </div>
@@ -76,8 +76,8 @@ const Index = () => {
                         className="h-12 w-12 rounded-lg object-contain bg-muted p-1"
                       />
                     ) : (
-                      <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-secondary to-tvs-blue-light flex items-center justify-center">
-                        <span className="text-xl font-bold text-secondary-foreground">
+                      <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-tvs-green to-tvs-green-dark flex items-center justify-center">
+                        <span className="text-xl font-bold text-white">
                           {initiative.name.charAt(0)}
                         </span>
                       </div>

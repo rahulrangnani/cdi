@@ -105,6 +105,7 @@ export type Database = {
       }
       initiative_partners: {
         Row: {
+          annual_cost: number | null
           api_documentation: string | null
           api_version: string | null
           billing_contact: string | null
@@ -112,6 +113,7 @@ export type Database = {
           currency: string | null
           id: string
           initiative_id: string
+          integration_cost: number | null
           partner_id: string
           pricing_per_call: number | null
           pricing_unit: string | null
@@ -124,6 +126,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          annual_cost?: number | null
           api_documentation?: string | null
           api_version?: string | null
           billing_contact?: string | null
@@ -131,6 +134,7 @@ export type Database = {
           currency?: string | null
           id?: string
           initiative_id: string
+          integration_cost?: number | null
           partner_id: string
           pricing_per_call?: number | null
           pricing_unit?: string | null
@@ -143,6 +147,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          annual_cost?: number | null
           api_documentation?: string | null
           api_version?: string | null
           billing_contact?: string | null
@@ -150,6 +155,7 @@ export type Database = {
           currency?: string | null
           id?: string
           initiative_id?: string
+          integration_cost?: number | null
           partner_id?: string
           pricing_per_call?: number | null
           pricing_unit?: string | null
