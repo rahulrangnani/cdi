@@ -327,8 +327,8 @@ const InitiativeDetail = () => {
                                   <CardTitle className="text-sm">
                                     {ipp.product?.name || 'Unknown Product'}
                                   </CardTitle>
-                                  <Badge variant={ipp.usage_status === 'live' ? 'default' : 'secondary'}>
-                                    {ipp.usage_status || 'planned'}
+                                  <Badge variant={ipp.usage_status === 'in_use' ? 'default' : 'secondary'}>
+                                    {ipp.usage_status === 'in_use' ? 'Live' : ipp.usage_status || 'planned'}
                                   </Badge>
                                 </div>
                               </CardHeader>

@@ -2,8 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
+export type InitiativePartnerProduct = Tables<'initiative_partner_products'> & {
+  product?: Tables<'products'>;
+};
+
 export type InitiativePartner = Tables<'initiative_partners'> & {
   partner?: Tables<'partners'>;
+  initiative_partner_products?: InitiativePartnerProduct[];
 };
 export type InitiativePartnerInsert = TablesInsert<'initiative_partners'>;
 export type InitiativePartnerUpdate = TablesUpdate<'initiative_partners'>;
@@ -16,7 +21,11 @@ export const useInitiativePartners = (initiativeId: string) => {
         .from('initiative_partners')
         .select(`
           *,
-          partner:partners (*)
+          partner:partners (*),
+          initiative_partner_products (
+            *,
+            product:products (*)
+          )
         `)
         .eq('initiative_id', initiativeId)
         .order('created_at', { ascending: false });
@@ -36,7 +45,11 @@ export const useInitiativePartner = (id: string) => {
         .from('initiative_partners')
         .select(`
           *,
-          partner:partners (*)
+          partner:partners (*),
+          initiative_partner_products (
+            *,
+            product:products (*)
+          )
         `)
         .eq('id', id)
         .single();
