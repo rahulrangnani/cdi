@@ -72,7 +72,6 @@ const partnerDetailsSchema = z.object({
   video_source_type: z.enum(['link', 'upload']).optional(),
   video_title: z.string().optional(),
   video_url: z.string().optional(),
-  video_duration: z.string().optional(),
   video_description: z.string().optional(),
 });
 
@@ -128,7 +127,6 @@ const InitiativeForm = () => {
       video_source_type: 'link',
       video_title: '',
       video_url: '',
-      video_duration: '',
       video_description: '',
     },
   });
@@ -190,7 +188,6 @@ const InitiativeForm = () => {
       video_source_type: 'link',
       video_title: '',
       video_url: '',
-      video_duration: '',
       video_description: '',
     });
     setSelectedProducts([]);
@@ -221,7 +218,6 @@ const InitiativeForm = () => {
       video_source_type: sourceType,
       video_title: initiativePartner.video_title || '',
       video_url: initiativePartner.video_url || '',
-      video_duration: initiativePartner.video_duration || '',
       video_description: initiativePartner.video_description || '',
     });
     setSelectedProducts(initiativePartner.initiative_partner_products?.map((p: any) => p.product_id) || []);
@@ -256,7 +252,6 @@ const InitiativeForm = () => {
         api_documentation: data.api_documentation || null,
         video_title: data.video_title || null,
         video_url: data.video_url || null,
-        video_duration: data.video_duration || null,
         video_description: data.video_description || null,
       };
 
@@ -704,34 +699,19 @@ const InitiativeForm = () => {
                         </RadioGroup>
                       </div>
 
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <FormField
-                          control={partnerForm.control}
-                          name="video_title"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Video Title</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., Integration Guide" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={partnerForm.control}
-                          name="video_duration"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Duration</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., 15:30" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormField
+                        control={partnerForm.control}
+                        name="video_title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Video Title</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Integration Guide" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
                       {videoSourceType === 'link' ? (
                         <FormField

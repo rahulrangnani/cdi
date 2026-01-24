@@ -140,14 +140,14 @@ const InitiativeDetail = () => {
                     </TabsList>
 
                     <TabsContent value="commercial" className="mt-4 space-y-4">
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-4 md:grid-cols-3">
                         <Card>
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Pricing</CardTitle>
+                            <CardTitle className="text-sm">Price Per Call</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <p className="text-2xl font-bold">
-                              {ip.currency} {ip.pricing_per_call || 'N/A'}
+                              {ip.currency || '₹'} {ip.pricing_per_call || 'N/A'}
                               <span className="text-sm font-normal text-muted-foreground ml-1">
                                 / {ip.pricing_unit || 'call'}
                               </span>
@@ -156,11 +156,21 @@ const InitiativeDetail = () => {
                         </Card>
                         <Card>
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">SLA</CardTitle>
+                            <CardTitle className="text-sm">Integration Cost</CardTitle>
                           </CardHeader>
                           <CardContent>
                             <p className="text-2xl font-bold">
-                              {ip.sla_percentage ? `${ip.sla_percentage}%` : 'N/A'}
+                              {ip.integration_cost ? `₹${ip.integration_cost.toLocaleString()}` : 'N/A'}
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm">Annual Cost</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-2xl font-bold">
+                              {ip.annual_cost ? `₹${ip.annual_cost.toLocaleString()}` : 'N/A'}
                             </p>
                           </CardContent>
                         </Card>
@@ -286,9 +296,6 @@ const InitiativeDetail = () => {
                               <Video className="h-4 w-4" />
                               {ip.video_title || 'Integration Tutorial'}
                             </CardTitle>
-                            {ip.video_duration && (
-                              <CardDescription>Duration: {ip.video_duration}</CardDescription>
-                            )}
                           </CardHeader>
                           <CardContent>
                             {ip.video_description && (
