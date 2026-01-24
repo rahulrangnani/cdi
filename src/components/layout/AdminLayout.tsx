@@ -31,20 +31,20 @@ const AdminLayout = () => {
     <div className="min-h-screen bg-background">
       <div className="flex">
         {/* Sidebar */}
-        <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-card">
+        <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-secondary text-secondary-foreground">
           <div className="flex h-full flex-col">
-            <div className="flex h-16 items-center border-b px-4">
+            <div className="flex h-16 items-center border-b border-secondary-foreground/10 px-4">
               <Link to="/" className="flex items-center gap-2">
                 <img
                   src="https://www.tvscredit.com/images/tvs-credit-logo.svg"
                   alt="TVS Credit"
-                  className="h-8"
+                  className="h-8 brightness-0 invert"
                 />
               </Link>
             </div>
 
             <nav className="flex-1 space-y-1 p-4">
-              <Button variant="ghost" className="w-full justify-start mb-4" asChild>
+              <Button variant="ghost" className="w-full justify-start mb-4 text-secondary-foreground hover:bg-secondary-foreground/10" asChild>
                 <Link to="/">
                   <ChevronLeft className="mr-2 h-4 w-4" />
                   Back to Portal
@@ -54,10 +54,10 @@ const AdminLayout = () => {
               {navItems.map((item) => (
                 <Button
                   key={item.href}
-                  variant={isActive(item.href, item.exact) ? 'secondary' : 'ghost'}
+                  variant="ghost"
                   className={cn(
-                    'w-full justify-start',
-                    isActive(item.href, item.exact) && 'bg-secondary'
+                    'w-full justify-start text-secondary-foreground hover:bg-secondary-foreground/10',
+                    isActive(item.href, item.exact) && 'bg-primary text-primary-foreground hover:bg-primary/90'
                   )}
                   asChild
                 >
@@ -69,10 +69,10 @@ const AdminLayout = () => {
               ))}
             </nav>
 
-            <div className="border-t p-4">
+            <div className="border-t border-secondary-foreground/10 p-4">
               <Button
                 variant="ghost"
-                className="w-full justify-start text-muted-foreground"
+                className="w-full justify-start text-secondary-foreground/70 hover:text-secondary-foreground hover:bg-secondary-foreground/10"
                 onClick={signOut}
               >
                 <LogOut className="mr-2 h-4 w-4" />

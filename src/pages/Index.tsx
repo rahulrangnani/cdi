@@ -26,14 +26,16 @@ const Index = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Digital Initiatives</h1>
-        <p className="text-muted-foreground">
-          Discover and explore TVS Credit's digital initiatives and partner integrations
+    <div className="space-y-8">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-secondary to-tvs-blue-light rounded-xl p-8 text-secondary-foreground">
+        <h1 className="text-3xl font-bold tracking-tight mb-2">Digital Initiatives Portal</h1>
+        <p className="text-secondary-foreground/80 max-w-2xl">
+          Discover and explore TVS Credit's digital initiatives, partner integrations, and API documentation
         </p>
       </div>
 
+      {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -41,11 +43,11 @@ const Index = () => {
             placeholder="Search initiatives..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-card"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className="w-full sm:w-[180px] bg-card">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -63,45 +65,48 @@ const Index = () => {
       ) : initiatives && initiatives.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {initiatives.map((initiative) => (
-            <Card key={initiative.id} className="group hover:shadow-lg transition-shadow">
-              <CardHeader>
+            <Card key={initiative.id} className="group hover:shadow-xl transition-all duration-300 border-border/50 hover:border-primary/30">
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
                     {initiative.logo_url ? (
                       <img
                         src={initiative.logo_url}
                         alt={initiative.name}
-                        className="h-10 w-10 rounded-lg object-contain"
+                        className="h-12 w-12 rounded-lg object-contain bg-muted p-1"
                       />
                     ) : (
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <span className="text-lg font-bold text-primary">
+                      <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-secondary to-tvs-blue-light flex items-center justify-center">
+                        <span className="text-xl font-bold text-secondary-foreground">
                           {initiative.name.charAt(0)}
                         </span>
                       </div>
                     )}
                     <div>
-                      <CardTitle className="text-lg">{initiative.name}</CardTitle>
+                      <CardTitle className="text-lg text-foreground">{initiative.name}</CardTitle>
                       {initiative.category && (
-                        <p className="text-xs text-muted-foreground">{initiative.category}</p>
+                        <p className="text-xs text-muted-foreground font-medium">{initiative.category}</p>
                       )}
                     </div>
                   </div>
-                  <Badge variant={initiative.status === 'active' ? 'default' : 'secondary'}>
+                  <Badge 
+                    variant={initiative.status === 'active' ? 'default' : 'secondary'}
+                    className={initiative.status === 'active' ? 'bg-primary hover:bg-primary/90' : ''}
+                  >
                     {initiative.status}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <CardDescription className="line-clamp-2">
+                <CardDescription className="line-clamp-2 text-muted-foreground">
                   {initiative.description || 'No description available'}
                 </CardDescription>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Users className="h-4 w-4" />
                     <span>{initiative.initiative_partners?.length || 0} Partners</span>
                   </div>
-                  <Button variant="ghost" size="sm" asChild className="group-hover:text-primary">
+                  <Button variant="outline" size="sm" asChild className="group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-colors">
                     <Link to={`/initiatives/${initiative.id}`}>
                       View Details
                       <ArrowRight className="ml-1 h-4 w-4" />
