@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
   Rocket,
-  Building2,
-  Package,
   ChevronLeft,
   LogOut,
 } from 'lucide-react';
@@ -14,8 +12,6 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/initiatives', label: 'Initiatives', icon: Rocket },
-  { href: '/admin/partners', label: 'Partners', icon: Building2 },
-  { href: '/admin/products', label: 'Products', icon: Package },
 ];
 
 const AdminLayout = () => {
