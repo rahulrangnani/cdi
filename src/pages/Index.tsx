@@ -27,10 +27,9 @@ const Index = () => {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section - Green gradient like TVS Credit website */}
+      {/* Hero Section - Green gradient */}
       <div className="bg-gradient-to-r from-tvs-green to-tvs-green-dark rounded-xl p-8 text-white shadow-lg">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Digital Initiatives Portal</h1>
-        <p className="text-white/90 max-w-2xl">
+        <p className="text-white/90 max-w-2xl text-lg">
           Discover and explore TVS Credit's digital initiatives, partner integrations, and API documentation
         </p>
       </div>
