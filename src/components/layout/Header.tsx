@@ -27,34 +27,34 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-secondary text-secondary-foreground shadow-md">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <img
             src="https://www.tvscredit.com/images/tvs-credit-logo.svg"
             alt="TVS Credit"
-            className="h-8"
+            className="h-8 brightness-0 invert"
           />
           <span className="font-semibold text-lg hidden sm:inline-block">
-            Digital Initiatives
+            Digital Initiatives Portal
           </span>
         </Link>
 
         <nav className="flex items-center gap-4">
           {isAdmin && (
-            <Button variant="ghost" asChild>
+            <Button variant="outline" className="border-secondary-foreground/30 text-secondary-foreground hover:bg-secondary-foreground/10" asChild>
               <Link to="/admin" className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Admin</span>
+                <span className="hidden sm:inline">Admin Panel</span>
               </Link>
             </Button>
           )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-secondary-foreground/10">
+                <Avatar className="h-10 w-10 border-2 border-secondary-foreground/30">
+                  <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>

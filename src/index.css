@@ -8,85 +8,97 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* TVS Credit Brand Colors */
-    --background: 0 0% 100%;
-    --foreground: 210 29% 13%;
+    /* TVS Credit Brand Colors - Professional Blue & Green */
+    --background: 210 20% 98%;
+    --foreground: 207 100% 22%;
 
     --card: 0 0% 100%;
-    --card-foreground: 210 29% 13%;
+    --card-foreground: 207 100% 22%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 210 29% 13%;
+    --popover-foreground: 207 100% 22%;
 
-    /* TVS Green - Primary */
-    --primary: 138 55% 44%;
+    /* TVS Green - Primary Action Color */
+    --primary: 134 50% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 210 29% 13%;
+    /* TVS Deep Blue - Secondary/Brand Color */
+    --secondary: 207 100% 22%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 210 20% 96%;
-    --muted-foreground: 210 10% 45%;
+    --muted-foreground: 207 30% 45%;
 
-    --accent: 210 20% 96%;
-    --accent-foreground: 210 29% 13%;
+    /* TVS Deep Blue for accents */
+    --accent: 207 100% 22%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
-    --ring: 138 55% 44%;
+    --border: 210 25% 88%;
+    --input: 210 25% 88%;
+    --ring: 134 50% 45%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 210 29% 13%;
+    /* Sidebar uses Deep Blue */
+    --sidebar-background: 207 100% 22%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 138 55% 44%;
+    --sidebar-primary: 134 50% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 25% 20%;
+    --sidebar-accent: 207 80% 28%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 210 25% 20%;
-    --sidebar-ring: 138 55% 44%;
+    --sidebar-border: 207 80% 28%;
+    --sidebar-ring: 134 50% 45%;
+
+    /* Custom brand tokens */
+    --tvs-blue: 207 100% 22%;
+    --tvs-green: 134 50% 45%;
+    --tvs-blue-light: 207 60% 35%;
   }
 
   .dark {
-    --background: 210 29% 8%;
+    --background: 207 50% 8%;
     --foreground: 0 0% 98%;
 
-    --card: 210 29% 10%;
+    --card: 207 40% 12%;
     --card-foreground: 0 0% 98%;
 
-    --popover: 210 29% 10%;
+    --popover: 207 40% 12%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 138 55% 44%;
+    --primary: 134 50% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 25% 18%;
+    --secondary: 207 60% 35%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 25% 18%;
-    --muted-foreground: 210 10% 60%;
+    --muted: 207 30% 18%;
+    --muted-foreground: 210 15% 65%;
 
-    --accent: 210 25% 18%;
+    --accent: 207 60% 35%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 210 25% 18%;
-    --input: 210 25% 18%;
-    --ring: 138 55% 44%;
+    --border: 207 30% 20%;
+    --input: 207 30% 20%;
+    --ring: 134 50% 45%;
 
-    --sidebar-background: 210 29% 6%;
+    --sidebar-background: 207 100% 15%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 138 55% 44%;
+    --sidebar-primary: 134 50% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 25% 12%;
+    --sidebar-accent: 207 60% 25%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 210 25% 12%;
-    --sidebar-ring: 138 55% 44%;
+    --sidebar-border: 207 60% 20%;
+    --sidebar-ring: 134 50% 45%;
+
+    --tvs-blue: 207 100% 22%;
+    --tvs-green: 134 50% 45%;
+    --tvs-blue-light: 207 60% 35%;
   }
 }
 

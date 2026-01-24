@@ -40,20 +40,22 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary via-tvs-blue-light to-secondary p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <img 
-            src="https://www.tvscredit.com/images/tvs-credit-logo.svg" 
-            alt="TVS Credit" 
-            className="h-12"
-          />
+          <div className="bg-card rounded-xl p-4 shadow-lg">
+            <img 
+              src="https://www.tvscredit.com/images/tvs-credit-logo.svg" 
+              alt="TVS Credit" 
+              className="h-12"
+            />
+          </div>
         </div>
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
+        <Card className="shadow-2xl border-0">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-2xl font-bold text-center text-foreground">Welcome Back</CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to access the Digital Initiatives Portal
+              Sign in to access the Digital Initiatives Portal
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
@@ -83,14 +85,14 @@ const Login = () => {
                 />
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
+            <CardFooter className="flex flex-col gap-4 pt-2">
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign In
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 Don't have an account?{' '}
-                <Link to="/signup" className="text-primary hover:underline">
+                <Link to="/signup" className="text-primary font-medium hover:underline">
                   Sign up
                 </Link>
               </p>
