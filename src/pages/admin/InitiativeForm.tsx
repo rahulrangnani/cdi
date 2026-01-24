@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useInitiative, useCreateInitiative, useUpdateInitiative } from '@/hooks/useInitiatives';
 import { useInitiativePartners, useCreateInitiativePartner, useUpdateInitiativePartner, useDeleteInitiativePartner } from '@/hooks/useInitiativePartners';
+import { useSyncInitiativePartnerProducts } from '@/hooks/useInitiativePartnerProducts';
 import { usePartners, useUpdatePartner } from '@/hooks/usePartners';
 import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
@@ -87,6 +88,8 @@ const InitiativeForm = () => {
   const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [videoSourceType, setVideoSourceType] = useState<'link' | 'upload'>('link');
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: initiative, isLoading: isLoadingInitiative } = useInitiative(id!);
   const { data: initiativePartners, isLoading: isLoadingPartners } = useInitiativePartners(id!);
@@ -99,6 +102,7 @@ const InitiativeForm = () => {
   const createInitiativePartner = useCreateInitiativePartner();
   const updateInitiativePartner = useUpdateInitiativePartner();
   const deleteInitiativePartner = useDeleteInitiativePartner();
+  const syncProducts = useSyncInitiativePartnerProducts();
 
   const form = useForm<InitiativeFormValues>({
     resolver: zodResolver(initiativeSchema),
@@ -192,6 +196,7 @@ const InitiativeForm = () => {
     });
     setSelectedProducts([]);
     setVideoSourceType('link');
+    setVideoFile(null);
   };
 
   const openAddPartner = () => {
@@ -255,14 +260,24 @@ const InitiativeForm = () => {
         video_description: data.video_description || null,
       };
 
+      let initiativePartnerId = editingPartnerId;
+
       if (editingPartnerId) {
         await updateInitiativePartner.mutateAsync({ id: editingPartnerId, ...payload });
-        toast({ title: 'Partner updated successfully' });
       } else {
-        await createInitiativePartner.mutateAsync(payload);
-        toast({ title: 'Partner added successfully' });
+        const result = await createInitiativePartner.mutateAsync(payload);
+        initiativePartnerId = result.id;
+      }
+
+      // Sync product associations
+      if (initiativePartnerId && selectedProducts.length >= 0) {
+        await syncProducts.mutateAsync({
+          initiativePartnerId,
+          productIds: selectedProducts,
+        });
       }
       
+      toast({ title: editingPartnerId ? 'Partner updated successfully' : 'Partner added successfully' });
       setShowAddPartner(false);
       resetPartnerForm();
     } catch (error) {
@@ -731,16 +746,66 @@ const InitiativeForm = () => {
                           )}
                         />
                       ) : (
-                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-                          <Upload className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Drag and drop your video file here, or click to browse
-                          </p>
-                          <Button type="button" variant="outline" size="sm">
-                            Choose File
-                          </Button>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Supports MP4, WebM, MOV (max 100MB)
+                        <div className="space-y-3">
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            accept="video/mp4,video/webm,video/quicktime"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setVideoFile(file);
+                              }
+                            }}
+                          />
+                          <div 
+                            className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Upload className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                            {videoFile ? (
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium text-primary">{videoFile.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                                </p>
+                              </div>
+                            ) : (
+                              <>
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  Click to browse or drag and drop your video file here
+                                </p>
+                                <Button type="button" variant="outline" size="sm" onClick={(e) => {
+                                  e.stopPropagation();
+                                  fileInputRef.current?.click();
+                                }}>
+                                  Choose File
+                                </Button>
+                              </>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Supports MP4, WebM, MOV (max 100MB)
+                            </p>
+                          </div>
+                          {videoFile && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive"
+                              onClick={() => {
+                                setVideoFile(null);
+                                if (fileInputRef.current) {
+                                  fileInputRef.current.value = '';
+                                }
+                              }}
+                            >
+                              Remove file
+                            </Button>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Note: Video upload storage is coming soon. For now, please use Video Link option.
                           </p>
                         </div>
                       )}

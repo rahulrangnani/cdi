@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Settings } from 'lucide-react';
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const InitiativesManagement = () => {
@@ -143,12 +143,6 @@ const InitiativesManagement = () => {
                             <Link to={`/admin/initiatives/${initiative.id}`}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to={`/admin/initiatives/${initiative.id}/partners`}>
-                              <Settings className="mr-2 h-4 w-4" />
-                              Manage Partners
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem
