@@ -233,6 +233,37 @@ const InitiativeForm = () => {
     setShowAddPartner(true);
   };
 
+  // Video file validation helper
+  const validateVideoFile = (file: File): { valid: boolean; error?: string } => {
+    // Check file extension
+    const validExtensions = ['mp4', 'webm', 'mov'];
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    if (!ext || !validExtensions.includes(ext)) {
+      return { valid: false, error: 'Invalid file extension. Allowed: mp4, webm, mov' };
+    }
+    
+    // Check MIME type
+    const validMimeTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+    if (!validMimeTypes.includes(file.type)) {
+      return { valid: false, error: 'Invalid file type. Only video files are allowed.' };
+    }
+    
+    // Additional size check (100MB max)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return { valid: false, error: 'File too large. Maximum size is 100MB.' };
+    }
+    
+    return { valid: true };
+  };
+
+  // Sanitize file extension for upload
+  const sanitizeExtension = (filename: string): string => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    const allowedExts = ['mp4', 'webm', 'mov'];
+    return allowedExts.includes(ext || '') ? ext! : 'mp4';
+  };
+
   const onPartnerSubmit = async (data: PartnerFormValues) => {
     if (!id) return;
 
@@ -248,26 +279,36 @@ const InitiativeForm = () => {
       // Handle video file upload if a file was selected
       let videoUrl = data.video_url || null;
       if (videoSourceType === 'upload' && videoFile) {
+        // Validate the video file before upload
+        const validation = validateVideoFile(videoFile);
+        if (!validation.valid) {
+          toast({
+            variant: 'destructive',
+            title: 'Invalid video file',
+            description: validation.error,
+          });
+          return;
+        }
+
         setIsUploadingVideo(true);
         try {
-          const fileExt = videoFile.name.split('.').pop();
-          const fileName = `${id}-${data.partner_id}-${Date.now()}.${fileExt}`;
+          // Use sanitized extension and random UUID for filename to prevent enumeration
+          const fileExt = sanitizeExtension(videoFile.name);
+          const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const filePath = `videos/${fileName}`;
 
           const { error: uploadError } = await supabase.storage
             .from('partner-videos')
             .upload(filePath, videoFile, {
               cacheControl: '3600',
-              upsert: true,
+              upsert: false, // Prevent overwriting existing files
             });
 
           if (uploadError) throw uploadError;
 
-          const { data: publicUrlData } = supabase.storage
-            .from('partner-videos')
-            .getPublicUrl(filePath);
-
-          videoUrl = publicUrlData.publicUrl;
+          // Store the file path (not public URL) since bucket is now private
+          // The frontend will use signed URLs to access the video
+          videoUrl = filePath;
         } finally {
           setIsUploadingVideo(false);
         }
