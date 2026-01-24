@@ -14,6 +14,8 @@ import Signup from "./pages/Signup";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import InitiativesManagement from "./pages/admin/InitiativesManagement";
 import InitiativeForm from "./pages/admin/InitiativeForm";
+import InitiativePartnersManagement from "./pages/admin/InitiativePartnersManagement";
+import InitiativePartnerForm from "./pages/admin/InitiativePartnerForm";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import PartnerForm from "./pages/admin/PartnerForm";
 import ProductsManagement from "./pages/admin/ProductsManagement";
@@ -45,6 +47,8 @@ const App = () => (
               <Route path="initiatives" element={<InitiativesManagement />} />
               <Route path="initiatives/new" element={<InitiativeForm />} />
               <Route path="initiatives/:id" element={<InitiativeForm />} />
+              <Route path="initiatives/:id/partners" element={<InitiativePartnersManagement />} />
+              <Route path="initiatives/:id/partners/:partnerId" element={<InitiativePartnerForm />} />
               <Route path="partners" element={<PartnersManagement />} />
               <Route path="partners/new" element={<PartnerForm />} />
               <Route path="partners/:id" element={<PartnerForm />} />

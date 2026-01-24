@@ -27,7 +27,7 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-secondary text-secondary-foreground shadow-md">
+    <header className="sticky top-0 z-50 w-full border-b bg-tvs-green text-white shadow-md">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <img
@@ -42,7 +42,7 @@ const Header = () => {
 
         <nav className="flex items-center gap-4">
           {isAdmin && (
-            <Button variant="outline" className="border-secondary-foreground/30 text-secondary-foreground hover:bg-secondary-foreground/10" asChild>
+            <Button variant="outline" className="border-white/30 text-white hover:bg-white/10 hover:text-white" asChild>
               <Link to="/admin" className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
                 <span className="hidden sm:inline">Admin Panel</span>
@@ -52,9 +52,9 @@ const Header = () => {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-secondary-foreground/10">
-                <Avatar className="h-10 w-10 border-2 border-secondary-foreground/30">
-                  <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-white/10">
+                <Avatar className="h-10 w-10 border-2 border-white/30">
+                  <AvatarFallback className="bg-tvs-blue text-white font-semibold">
                     {getInitials()}
                   </AvatarFallback>
                 </Avatar>

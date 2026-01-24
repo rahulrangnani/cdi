@@ -40,7 +40,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary via-tvs-blue-light to-secondary p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-tvs-green via-tvs-green-dark to-tvs-green p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
           <div className="bg-card rounded-xl p-4 shadow-lg">

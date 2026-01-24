@@ -61,16 +61,18 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-tvs-green via-tvs-green-dark to-tvs-green p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <img 
-            src="https://www.tvscredit.com/images/tvs-credit-logo.svg" 
-            alt="TVS Credit" 
-            className="h-12"
-          />
+          <div className="bg-card rounded-xl p-4 shadow-lg">
+            <img 
+              src="https://www.tvscredit.com/images/tvs-credit-logo.svg" 
+              alt="TVS Credit" 
+              className="h-12"
+            />
+          </div>
         </div>
-        <Card>
+        <Card className="shadow-2xl border-0">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
             <CardDescription className="text-center">

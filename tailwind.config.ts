@@ -60,6 +60,7 @@ export default {
         tvs: {
           blue: "hsl(var(--tvs-blue))",
           green: "hsl(var(--tvs-green))",
+          "green-dark": "hsl(var(--tvs-green-dark))",
           "blue-light": "hsl(var(--tvs-blue-light))",
         },
       },
