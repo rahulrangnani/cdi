@@ -39,7 +39,7 @@ const AdminDashboard = () => {
       value: products?.filter(p => p.is_active).length || 0,
       description: 'Active products',
       icon: Package,
-      href: '/admin/products',
+      href: '/admin/initiatives',
     },
   ];
 
@@ -126,9 +126,9 @@ const AdminDashboard = () => {
               </Link>
             </Button>
             <Button variant="outline" className="w-full justify-start" asChild>
-              <Link to="/admin/products">
+              <Link to="/admin/initiatives">
                 <Package className="mr-2 h-4 w-4" />
-                Manage Products
+                Manage Initiatives
               </Link>
             </Button>
           </CardContent>

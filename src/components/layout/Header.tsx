@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, Settings, User, Shield } from 'lucide-react';
+import tvsLogo from '@/assets/tvs-credit-logo.png';
 
 const Header = () => {
   const { user, isAdmin, signOut } = useAuth();
@@ -31,9 +32,9 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <img
-            src="https://www.tvscredit.com/images/tvs-credit-logo.svg"
+            src={tvsLogo}
             alt="TVS Credit"
-            className="h-8 brightness-0 invert"
+            className="h-8"
           />
           <span className="font-semibold text-lg hidden sm:inline-block">
             Digital Initiatives Portal
