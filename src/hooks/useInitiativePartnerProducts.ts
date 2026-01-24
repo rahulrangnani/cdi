@@ -31,7 +31,7 @@ export const useSyncInitiativePartnerProducts = () => {
         (productId) => ({
           initiative_partner_id: initiativePartnerId,
           product_id: productId,
-          usage_status: 'live',
+          usage_status: 'in_use',
         })
       );
 
@@ -46,6 +46,8 @@ export const useSyncInitiativePartnerProducts = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['initiatives'] });
       queryClient.invalidateQueries({ queryKey: ['initiative-partners'] });
+      queryClient.invalidateQueries({ queryKey: ['initiative'] });
+      queryClient.invalidateQueries({ queryKey: ['initiative-partner'] });
     },
   });
 };
