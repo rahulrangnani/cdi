@@ -1,11 +1,12 @@
 import { useParams, Link } from 'react-router-dom';
 import { useInitiative } from '@/hooks/useInitiatives';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Building2, FileCode, Video, Phone, Loader2, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Accordion,
@@ -21,6 +22,92 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+// Helper to check if a URL is a storage path (not a full URL)
+const isStoragePath = (url: string): boolean => {
+  return url.startsWith('videos/') && !url.startsWith('http');
+};
+
+// Component to handle video display with signed URLs for private storage
+const SecureVideoPlayer = ({ videoUrl, videoTitle }: { videoUrl: string; videoTitle?: string }) => {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getSignedUrl = async () => {
+      // If it's a YouTube/Vimeo URL or full http URL, use directly
+      if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('vimeo.com')) {
+        setSignedUrl(videoUrl);
+        setIsLoading(false);
+        return;
+      }
+
+      // If it's a storage path, get a signed URL
+      if (isStoragePath(videoUrl)) {
+        try {
+          const { data, error: signError } = await supabase.storage
+            .from('partner-videos')
+            .createSignedUrl(videoUrl, 3600); // 1 hour expiry
+
+          if (signError) throw signError;
+          setSignedUrl(data.signedUrl);
+        } catch (err) {
+          console.error('Error getting signed URL:', err);
+          setError('Failed to load video');
+        }
+      } else {
+        // Assume it's a direct URL
+        setSignedUrl(videoUrl);
+      }
+      setIsLoading(false);
+    };
+
+    getSignedUrl();
+  }, [videoUrl]);
+
+  if (isLoading) {
+    return (
+      <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !signedUrl) {
+    return (
+      <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+        <p className="text-muted-foreground">{error || 'Video unavailable'}</p>
+      </div>
+    );
+  }
+
+  // YouTube/Vimeo embed
+  if (signedUrl.includes('youtube.com') || signedUrl.includes('youtu.be') || signedUrl.includes('vimeo.com')) {
+    return (
+      <iframe
+        src={signedUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+        className="w-full h-full"
+        allowFullScreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        title={videoTitle || 'Partner video'}
+      />
+    );
+  }
+
+  // Native video player for uploaded files
+  return (
+    <video
+      src={signedUrl}
+      className="w-full h-full"
+      controls
+      controlsList="nodownload"
+      preload="metadata"
+    >
+      Your browser does not support the video tag.
+    </video>
+  );
+};
 
 const InitiativeDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -304,24 +391,10 @@ const InitiativeDetail = () => {
                               </p>
                             )}
                             <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                              {ip.video_url.includes('youtube.com') || ip.video_url.includes('youtu.be') || ip.video_url.includes('vimeo.com') ? (
-                                <iframe
-                                  src={ip.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
-                                  className="w-full h-full"
-                                  allowFullScreen
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                />
-                              ) : (
-                                <video
-                                  src={ip.video_url}
-                                  className="w-full h-full"
-                                  controls
-                                  controlsList="nodownload"
-                                  preload="metadata"
-                                >
-                                  Your browser does not support the video tag.
-                                </video>
-                              )}
+                              <SecureVideoPlayer 
+                                videoUrl={ip.video_url} 
+                                videoTitle={ip.video_title || 'Integration Tutorial'} 
+                              />
                             </div>
                           </CardContent>
                         </Card>
