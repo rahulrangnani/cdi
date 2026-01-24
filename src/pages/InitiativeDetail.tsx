@@ -304,11 +304,24 @@ const InitiativeDetail = () => {
                               </p>
                             )}
                             <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                              <iframe
-                                src={ip.video_url}
-                                className="w-full h-full"
-                                allowFullScreen
-                              />
+                              {ip.video_url.includes('youtube.com') || ip.video_url.includes('youtu.be') || ip.video_url.includes('vimeo.com') ? (
+                                <iframe
+                                  src={ip.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                                  className="w-full h-full"
+                                  allowFullScreen
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                />
+                              ) : (
+                                <video
+                                  src={ip.video_url}
+                                  className="w-full h-full"
+                                  controls
+                                  controlsList="nodownload"
+                                  preload="metadata"
+                                >
+                                  Your browser does not support the video tag.
+                                </video>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
