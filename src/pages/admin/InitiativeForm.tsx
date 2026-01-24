@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useInitiative, useCreateInitiative, useUpdateInitiative } from '@/hooks/useInitiatives';
 import { useInitiativePartners, useCreateInitiativePartner, useUpdateInitiativePartner, useDeleteInitiativePartner } from '@/hooks/useInitiativePartners';
-import { usePartners } from '@/hooks/usePartners';
+import { usePartners, useUpdatePartner } from '@/hooks/usePartners';
 import { useProducts } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,10 +42,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Loader2, Plus, Trash2, Building2, DollarSign, FileCode, Video, Package } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Trash2, Building2, DollarSign, FileCode, Video, Package, Image, Link2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const initiativeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -57,6 +58,7 @@ type InitiativeFormValues = z.infer<typeof initiativeSchema>;
 
 const partnerDetailsSchema = z.object({
   partner_id: z.string().min(1, 'Partner is required'),
+  partner_logo_url: z.string().optional(),
   product_ids: z.array(z.string()).optional(),
   integration_cost: z.string().optional(),
   annual_cost: z.string().optional(),
@@ -67,6 +69,7 @@ const partnerDetailsSchema = z.object({
   terms_and_conditions: z.string().optional(),
   api_version: z.string().optional(),
   api_documentation: z.string().optional(),
+  video_source_type: z.enum(['link', 'upload']).optional(),
   video_title: z.string().optional(),
   video_url: z.string().optional(),
   video_duration: z.string().optional(),
@@ -84,10 +87,12 @@ const InitiativeForm = () => {
   const [showAddPartner, setShowAddPartner] = useState(false);
   const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [videoSourceType, setVideoSourceType] = useState<'link' | 'upload'>('link');
 
   const { data: initiative, isLoading: isLoadingInitiative } = useInitiative(id!);
   const { data: initiativePartners, isLoading: isLoadingPartners } = useInitiativePartners(id!);
   const { data: partners } = usePartners();
+  const updatePartner = useUpdatePartner();
   const { data: products } = useProducts();
   
   const createInitiative = useCreateInitiative();
@@ -109,6 +114,7 @@ const InitiativeForm = () => {
     resolver: zodResolver(partnerDetailsSchema),
     defaultValues: {
       partner_id: '',
+      partner_logo_url: '',
       product_ids: [],
       integration_cost: '',
       annual_cost: '',
@@ -119,6 +125,7 @@ const InitiativeForm = () => {
       terms_and_conditions: '',
       api_version: '1.0',
       api_documentation: '',
+      video_source_type: 'link',
       video_title: '',
       video_url: '',
       video_duration: '',
@@ -169,6 +176,7 @@ const InitiativeForm = () => {
   const resetPartnerForm = () => {
     partnerForm.reset({
       partner_id: '',
+      partner_logo_url: '',
       product_ids: [],
       integration_cost: '',
       annual_cost: '',
@@ -179,12 +187,14 @@ const InitiativeForm = () => {
       terms_and_conditions: '',
       api_version: '1.0',
       api_documentation: '',
+      video_source_type: 'link',
       video_title: '',
       video_url: '',
       video_duration: '',
       video_description: '',
     });
     setSelectedProducts([]);
+    setVideoSourceType('link');
   };
 
   const openAddPartner = () => {
@@ -194,8 +204,10 @@ const InitiativeForm = () => {
   };
 
   const openEditPartner = (initiativePartner: any) => {
+    const sourceType = initiativePartner.video_url ? 'link' : 'link';
     partnerForm.reset({
       partner_id: initiativePartner.partner_id,
+      partner_logo_url: initiativePartner.partner?.logo_url || '',
       product_ids: initiativePartner.initiative_partner_products?.map((p: any) => p.product_id) || [],
       integration_cost: initiativePartner.integration_cost?.toString() || '',
       annual_cost: initiativePartner.annual_cost?.toString() || '',
@@ -206,12 +218,14 @@ const InitiativeForm = () => {
       terms_and_conditions: initiativePartner.terms_and_conditions || '',
       api_version: initiativePartner.api_version || '1.0',
       api_documentation: initiativePartner.api_documentation || '',
+      video_source_type: sourceType,
       video_title: initiativePartner.video_title || '',
       video_url: initiativePartner.video_url || '',
       video_duration: initiativePartner.video_duration || '',
       video_description: initiativePartner.video_description || '',
     });
     setSelectedProducts(initiativePartner.initiative_partner_products?.map((p: any) => p.product_id) || []);
+    setVideoSourceType(sourceType);
     setEditingPartnerId(initiativePartner.id);
     setShowAddPartner(true);
   };
@@ -220,6 +234,14 @@ const InitiativeForm = () => {
     if (!id) return;
 
     try {
+      // Update partner logo if provided
+      if (data.partner_logo_url && data.partner_id) {
+        await updatePartner.mutateAsync({
+          id: data.partner_id,
+          logo_url: data.partner_logo_url,
+        });
+      }
+
       const payload = {
         initiative_id: id,
         partner_id: data.partner_id,
@@ -434,6 +456,27 @@ const InitiativeForm = () => {
                       )}
                     />
 
+                    {/* Partner Logo URL */}
+                    <FormField
+                      control={partnerForm.control}
+                      name="partner_logo_url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            <Image className="h-4 w-4" />
+                            Partner Logo URL
+                          </FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://example.com/partner-logo.png" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            URL to the partner's logo image
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     {/* Products Multi-Select */}
                     <div className="space-y-2">
                       <FormLabel className="flex items-center gap-2">
@@ -635,6 +678,32 @@ const InitiativeForm = () => {
                         <Video className="h-4 w-4" />
                         Video Tutorial
                       </h4>
+                      
+                      {/* Video Source Type Toggle */}
+                      <div className="space-y-2">
+                        <FormLabel>Video Source</FormLabel>
+                        <RadioGroup
+                          value={videoSourceType}
+                          onValueChange={(value: 'link' | 'upload') => setVideoSourceType(value)}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="link" id="video-link" />
+                            <label htmlFor="video-link" className="flex items-center gap-1 cursor-pointer text-sm">
+                              <Link2 className="h-4 w-4" />
+                              Video Link (URL)
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="upload" id="video-upload" />
+                            <label htmlFor="video-upload" className="flex items-center gap-1 cursor-pointer text-sm">
+                              <Upload className="h-4 w-4" />
+                              Upload Video
+                            </label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+
                       <div className="grid gap-4 md:grid-cols-2">
                         <FormField
                           control={partnerForm.control}
@@ -663,19 +732,39 @@ const InitiativeForm = () => {
                           )}
                         />
                       </div>
-                      <FormField
-                        control={partnerForm.control}
-                        name="video_url"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Video URL</FormLabel>
-                            <FormControl>
-                              <Input placeholder="https://youtube.com/watch?v=..." {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+
+                      {videoSourceType === 'link' ? (
+                        <FormField
+                          control={partnerForm.control}
+                          name="video_url"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Video URL</FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://youtube.com/watch?v=..." {...field} />
+                              </FormControl>
+                              <FormDescription>
+                                Paste a link to YouTube, Vimeo, or any video hosting platform
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ) : (
+                        <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                          <Upload className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Drag and drop your video file here, or click to browse
+                          </p>
+                          <Button type="button" variant="outline" size="sm">
+                            Choose File
+                          </Button>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Supports MP4, WebM, MOV (max 100MB)
+                          </p>
+                        </div>
+                      )}
+
                       <FormField
                         control={partnerForm.control}
                         name="video_description"

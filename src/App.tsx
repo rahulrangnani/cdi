@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MainLayout from "@/components/layout/MainLayout";
@@ -14,6 +14,8 @@ import Signup from "./pages/Signup";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import InitiativesManagement from "./pages/admin/InitiativesManagement";
 import InitiativeForm from "./pages/admin/InitiativeForm";
+import PartnersManagement from "./pages/admin/PartnersManagement";
+import PartnerForm from "./pages/admin/PartnerForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +44,12 @@ const App = () => (
               <Route path="initiatives" element={<InitiativesManagement />} />
               <Route path="initiatives/new" element={<InitiativeForm />} />
               <Route path="initiatives/:id" element={<InitiativeForm />} />
+              {/* Partners routes */}
+              <Route path="partners" element={<PartnersManagement />} />
+              <Route path="partners/new" element={<PartnerForm />} />
+              <Route path="partners/:id" element={<PartnerForm />} />
+              {/* Products redirect to initiatives */}
+              <Route path="products" element={<Navigate to="/admin/initiatives" replace />} />
             </Route>
 
             {/* Catch-all */}

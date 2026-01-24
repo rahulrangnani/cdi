@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Users, ArrowRight, Loader2 } from 'lucide-react';
+import tvsLogo from '@/assets/tvs-credit-logo.png';
 
 const Index = () => {
   const [search, setSearch] = useState('');
@@ -27,8 +28,11 @@ const Index = () => {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section - Green gradient */}
+      {/* Hero Section - Green gradient with logo */}
       <div className="bg-gradient-to-r from-tvs-green to-tvs-green-dark rounded-xl p-8 text-white shadow-lg">
+        <div className="flex items-center gap-4 mb-4">
+          <img src={tvsLogo} alt="TVS Credit" className="h-12" />
+        </div>
         <p className="text-white/90 max-w-2xl text-lg">
           Discover and explore TVS Credit's digital initiatives, partner integrations, and API documentation
         </p>
