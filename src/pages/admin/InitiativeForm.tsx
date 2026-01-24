@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 import { useInitiative, useCreateInitiative, useUpdateInitiative } from '@/hooks/useInitiatives';
 import { useInitiativePartners, useCreateInitiativePartner, useUpdateInitiativePartner, useDeleteInitiativePartner } from '@/hooks/useInitiativePartners';
 import { useSyncInitiativePartnerProducts } from '@/hooks/useInitiativePartnerProducts';
@@ -89,6 +90,7 @@ const InitiativeForm = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [videoSourceType, setVideoSourceType] = useState<'link' | 'upload'>('link');
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: initiative, isLoading: isLoadingInitiative } = useInitiative(id!);
@@ -243,6 +245,34 @@ const InitiativeForm = () => {
         });
       }
 
+      // Handle video file upload if a file was selected
+      let videoUrl = data.video_url || null;
+      if (videoSourceType === 'upload' && videoFile) {
+        setIsUploadingVideo(true);
+        try {
+          const fileExt = videoFile.name.split('.').pop();
+          const fileName = `${id}-${data.partner_id}-${Date.now()}.${fileExt}`;
+          const filePath = `videos/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('partner-videos')
+            .upload(filePath, videoFile, {
+              cacheControl: '3600',
+              upsert: true,
+            });
+
+          if (uploadError) throw uploadError;
+
+          const { data: publicUrlData } = supabase.storage
+            .from('partner-videos')
+            .getPublicUrl(filePath);
+
+          videoUrl = publicUrlData.publicUrl;
+        } finally {
+          setIsUploadingVideo(false);
+        }
+      }
+
       const payload = {
         initiative_id: id,
         partner_id: data.partner_id,
@@ -256,7 +286,7 @@ const InitiativeForm = () => {
         api_version: data.api_version || null,
         api_documentation: data.api_documentation || null,
         video_title: data.video_title || null,
-        video_url: data.video_url || null,
+        video_url: videoUrl,
         video_description: data.video_description || null,
       };
 
@@ -280,7 +310,9 @@ const InitiativeForm = () => {
       toast({ title: editingPartnerId ? 'Partner updated successfully' : 'Partner added successfully' });
       setShowAddPartner(false);
       resetPartnerForm();
+      setVideoFile(null);
     } catch (error) {
+      console.error('Partner submit error:', error);
       toast({
         variant: 'destructive',
         title: `Failed to ${editingPartnerId ? 'update' : 'add'} partner`,
@@ -805,7 +837,7 @@ const InitiativeForm = () => {
                             </Button>
                           )}
                           <p className="text-xs text-muted-foreground">
-                            Note: Video upload storage is coming soon. For now, please use Video Link option.
+                            Video will be uploaded when you click Update/Add Partner.
                           </p>
                         </div>
                       )}
@@ -835,12 +867,12 @@ const InitiativeForm = () => {
                       </Button>
                       <Button 
                         type="submit" 
-                        disabled={createInitiativePartner.isPending || updateInitiativePartner.isPending}
+                        disabled={createInitiativePartner.isPending || updateInitiativePartner.isPending || isUploadingVideo}
                       >
-                        {(createInitiativePartner.isPending || updateInitiativePartner.isPending) && (
+                        {(createInitiativePartner.isPending || updateInitiativePartner.isPending || isUploadingVideo) && (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        {editingPartnerId ? 'Update Partner' : 'Add Partner'}
+                        {isUploadingVideo ? 'Uploading Video...' : editingPartnerId ? 'Update Partner' : 'Add Partner'}
                       </Button>
                     </DialogFooter>
                   </form>
