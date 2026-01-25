@@ -45,7 +45,7 @@ const Login = () => {
         <div className="flex justify-center mb-8">
           <div className="bg-card rounded-xl p-4 shadow-lg">
             <img 
-              src="https://www.tvscredit.com/images/tvs-credit-logo.svg" 
+              src="https://www.tvscredit.com/wp-content/uploads/2025/03/tvs_credit_logo.svg" 
               alt="TVS Credit" 
               className="h-12"
             />
