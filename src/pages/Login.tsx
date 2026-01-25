@@ -65,10 +65,14 @@ const Login = () => {
                 Discover and explore TVS Credit's digital initiatives, partner integrations, and API documentation
               </p>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/30 rounded-lg self-start sm:self-center">
-              <Shield className="h-4 w-4" />
-              <span className="font-medium">Admin Login</span>
-            </div>
+            <Button 
+              variant="outline"
+              className="border-white/50 bg-white/10 text-white hover:bg-white hover:text-tvs-green self-start sm:self-center"
+              onClick={() => document.getElementById('login-form')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              Admin Login
+            </Button>
           </div>
         </div>
       </div>
@@ -76,7 +80,7 @@ const Login = () => {
       {/* Login Form */}
       <div className="container mx-auto px-4 pb-8">
         <div className="max-w-md mx-auto">
-          <Card className="shadow-xl border-0 bg-card">
+          <Card id="login-form" className="shadow-xl border-0 bg-card">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-2xl font-bold text-center text-foreground">Welcome Back</CardTitle>
               <p className="text-center text-muted-foreground text-sm">
