@@ -34,7 +34,7 @@ const AdminLayout = () => {
                 <img
                   src="https://www.tvscredit.com/images/tvs-credit-logo.svg"
                   alt="TVS Credit"
-                  className="h-8 brightness-0 invert"
+                  className="h-10"
                 />
               </Link>
             </div>
