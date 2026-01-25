@@ -32,7 +32,7 @@ const AdminLayout = () => {
             <div className="flex h-16 items-center border-b border-white/10 px-4">
               <Link to="/" className="flex items-center gap-2">
                 <img
-                  src="https://www.tvscredit.com/images/tvs-credit-logo.svg"
+                  src="https://www.tvscredit.com/wp-content/uploads/2025/03/tvs_credit_logo.svg"
                   alt="TVS Credit"
                   className="h-10"
                 />

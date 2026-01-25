@@ -210,7 +210,12 @@ const InitiativeForm = () => {
   };
 
   const openEditPartner = (initiativePartner: any) => {
-    const sourceType = initiativePartner.media_url ? 'link' : 'link';
+    // Detect if existing media is an uploaded file (path) or external link
+    const isUploadedFile = initiativePartner.media_url && 
+      (initiativePartner.media_url.startsWith('videos/') || 
+       initiativePartner.media_url.startsWith('audios/') || 
+       initiativePartner.media_url.startsWith('documents/'));
+    const sourceType = isUploadedFile ? 'upload' : 'link';
     partnerForm.reset({
       partner_id: initiativePartner.partner_id,
       partner_logo_url: initiativePartner.partner?.logo_url || '',
