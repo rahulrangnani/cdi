@@ -43,7 +43,7 @@ const Header = () => {
 
         <nav className="flex items-center gap-4">
           {isAdmin && (
-            <Button variant="outline" className="border-white/30 text-white hover:bg-white/10 hover:text-white" asChild>
+            <Button className="bg-tvs-blue hover:bg-tvs-blue/90 text-white" asChild>
               <Link to="/admin" className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
                 <span className="hidden sm:inline">Admin Panel</span>
@@ -71,13 +71,11 @@ const Header = () => {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>

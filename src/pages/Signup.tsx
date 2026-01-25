@@ -21,6 +21,16 @@ const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate email domain
+    if (!email.toLowerCase().endsWith('@tvscredit.com')) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid email domain',
+        description: 'Only @tvscredit.com email addresses are allowed to register.',
+      });
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast({
         variant: 'destructive',

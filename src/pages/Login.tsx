@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -58,21 +58,13 @@ const Login = () => {
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-6">
         <div className="bg-gradient-to-r from-tvs-green to-tvs-green-dark rounded-xl p-8 text-white shadow-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold mb-2">Digital Initiatives Portal</h1>
               <p className="text-white/90 max-w-2xl text-lg">
                 Discover and explore TVS Credit's digital initiatives, partner integrations, and API documentation
               </p>
             </div>
-            <Button 
-              variant="outline"
-              className="border-white/50 bg-white/10 text-white hover:bg-white hover:text-tvs-green self-start sm:self-center"
-              onClick={() => document.getElementById('login-form')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              Admin Login
-            </Button>
           </div>
         </div>
       </div>
@@ -84,7 +76,7 @@ const Login = () => {
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-2xl font-bold text-center text-foreground">Welcome Back</CardTitle>
               <p className="text-center text-muted-foreground text-sm">
-                Sign in to access the admin panel
+                Sign in to access the portal
               </p>
             </CardHeader>
             <form onSubmit={handleSubmit}>
@@ -125,6 +117,12 @@ const Login = () => {
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Sign In
                 </Button>
+                <p className="text-sm text-muted-foreground text-center">
+                  Don't have an account?{' '}
+                  <Link to="/signup" className="text-primary hover:underline font-medium">
+                    Sign up
+                  </Link>
+                </p>
               </CardFooter>
             </form>
           </Card>
