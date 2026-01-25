@@ -11,6 +11,7 @@ import Index from "./pages/Index";
 import InitiativeDetail from "./pages/InitiativeDetail";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import InitiativesManagement from "./pages/admin/InitiativesManagement";
 import InitiativeForm from "./pages/admin/InitiativeForm";
@@ -36,6 +37,7 @@ const App = () => (
             <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
               <Route path="/" element={<Index />} />
               <Route path="/initiatives/:id" element={<InitiativeDetail />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
 
             {/* Admin routes */}
