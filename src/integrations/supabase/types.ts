@@ -114,16 +114,16 @@ export type Database = {
           id: string
           initiative_id: string
           integration_cost: number | null
+          media_description: string | null
+          media_title: string | null
+          media_type: string | null
+          media_url: string | null
           partner_id: string
           pricing_per_call: number | null
           pricing_unit: string | null
           sla_percentage: number | null
           terms_and_conditions: string | null
           updated_at: string
-          video_description: string | null
-          video_duration: string | null
-          video_title: string | null
-          video_url: string | null
         }
         Insert: {
           annual_cost?: number | null
@@ -135,16 +135,16 @@ export type Database = {
           id?: string
           initiative_id: string
           integration_cost?: number | null
+          media_description?: string | null
+          media_title?: string | null
+          media_type?: string | null
+          media_url?: string | null
           partner_id: string
           pricing_per_call?: number | null
           pricing_unit?: string | null
           sla_percentage?: number | null
           terms_and_conditions?: string | null
           updated_at?: string
-          video_description?: string | null
-          video_duration?: string | null
-          video_title?: string | null
-          video_url?: string | null
         }
         Update: {
           annual_cost?: number | null
@@ -156,16 +156,16 @@ export type Database = {
           id?: string
           initiative_id?: string
           integration_cost?: number | null
+          media_description?: string | null
+          media_title?: string | null
+          media_type?: string | null
+          media_url?: string | null
           partner_id?: string
           pricing_per_call?: number | null
           pricing_unit?: string | null
           sla_percentage?: number | null
           terms_and_conditions?: string | null
           updated_at?: string
-          video_description?: string | null
-          video_duration?: string | null
-          video_title?: string | null
-          video_url?: string | null
         }
         Relationships: [
           {

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Building2, FileCode, Video, Phone, Loader2, Copy, Check } from 'lucide-react';
+import { ArrowLeft, Building2, FileCode, FileText, Phone, Loader2, Copy, Check, Film, Music } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -25,11 +25,11 @@ import {
 
 // Helper to check if a URL is a storage path (not a full URL)
 const isStoragePath = (url: string): boolean => {
-  return url.startsWith('videos/') && !url.startsWith('http');
+  return (url.startsWith('videos/') || url.startsWith('audios/') || url.startsWith('documents/')) && !url.startsWith('http');
 };
 
-// Component to handle video display with signed URLs for private storage
-const SecureVideoPlayer = ({ videoUrl, videoTitle }: { videoUrl: string; videoTitle?: string }) => {
+// Component to handle media display with signed URLs for private storage
+const SecureMediaPlayer = ({ mediaUrl, mediaTitle, mediaType }: { mediaUrl: string; mediaTitle?: string; mediaType?: string }) => {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,34 +37,34 @@ const SecureVideoPlayer = ({ videoUrl, videoTitle }: { videoUrl: string; videoTi
   useEffect(() => {
     const getSignedUrl = async () => {
       // If it's a YouTube/Vimeo URL or full http URL, use directly
-      if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('vimeo.com')) {
-        setSignedUrl(videoUrl);
+      if (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be') || mediaUrl.includes('vimeo.com')) {
+        setSignedUrl(mediaUrl);
         setIsLoading(false);
         return;
       }
 
       // If it's a storage path, get a signed URL
-      if (isStoragePath(videoUrl)) {
+      if (isStoragePath(mediaUrl)) {
         try {
           const { data, error: signError } = await supabase.storage
             .from('partner-videos')
-            .createSignedUrl(videoUrl, 3600); // 1 hour expiry
+            .createSignedUrl(mediaUrl, 3600); // 1 hour expiry
 
           if (signError) throw signError;
           setSignedUrl(data.signedUrl);
         } catch (err) {
           console.error('Error getting signed URL:', err);
-          setError('Failed to load video');
+          setError('Failed to load media');
         }
       } else {
         // Assume it's a direct URL
-        setSignedUrl(videoUrl);
+        setSignedUrl(mediaUrl);
       }
       setIsLoading(false);
     };
 
     getSignedUrl();
-  }, [videoUrl]);
+  }, [mediaUrl]);
 
   if (isLoading) {
     return (
@@ -77,12 +77,12 @@ const SecureVideoPlayer = ({ videoUrl, videoTitle }: { videoUrl: string; videoTi
   if (error || !signedUrl) {
     return (
       <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-        <p className="text-muted-foreground">{error || 'Video unavailable'}</p>
+        <p className="text-muted-foreground">{error || 'Media unavailable'}</p>
       </div>
     );
   }
 
-  // YouTube/Vimeo embed
+  // YouTube/Vimeo embed for videos
   if (signedUrl.includes('youtube.com') || signedUrl.includes('youtu.be') || signedUrl.includes('vimeo.com')) {
     return (
       <iframe
@@ -90,23 +90,64 @@ const SecureVideoPlayer = ({ videoUrl, videoTitle }: { videoUrl: string; videoTi
         className="w-full h-full"
         allowFullScreen
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        title={videoTitle || 'Partner video'}
+        title={mediaTitle || 'Partner video'}
       />
     );
   }
 
-  // Native video player for uploaded files
-  return (
-    <video
-      src={signedUrl}
-      className="w-full h-full"
-      controls
-      controlsList="nodownload"
-      preload="metadata"
-    >
-      Your browser does not support the video tag.
-    </video>
-  );
+  // Handle based on media type
+  const type = mediaType || 'video';
+  
+  if (type === 'video') {
+    return (
+      <video
+        src={signedUrl}
+        className="w-full h-full"
+        controls
+        controlsList="nodownload"
+        preload="metadata"
+      >
+        Your browser does not support the video tag.
+      </video>
+    );
+  }
+  
+  if (type === 'audio') {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-muted rounded-lg">
+        <Music className="h-16 w-16 text-primary mb-4" />
+        <audio
+          src={signedUrl}
+          controls
+          controlsList="nodownload"
+          className="w-full max-w-md"
+        >
+          Your browser does not support the audio tag.
+        </audio>
+      </div>
+    );
+  }
+  
+  if (type === 'document') {
+    // For documents, show a download/view link
+    return (
+      <div className="flex flex-col items-center justify-center p-8 bg-muted rounded-lg">
+        <FileText className="h-16 w-16 text-primary mb-4" />
+        <p className="text-sm text-muted-foreground mb-4">{mediaTitle || 'Document'}</p>
+        <a
+          href={signedUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        >
+          <FileText className="h-4 w-4" />
+          View Document
+        </a>
+      </div>
+    );
+  }
+
+  return null;
 };
 
 const InitiativeDetail = () => {
@@ -221,7 +262,7 @@ const InitiativeDetail = () => {
                     <TabsList className="grid w-full grid-cols-5">
                       <TabsTrigger value="commercial">Commercial</TabsTrigger>
                       <TabsTrigger value="api">API Docs</TabsTrigger>
-                      <TabsTrigger value="video">Video</TabsTrigger>
+                      <TabsTrigger value="media">Media</TabsTrigger>
                       <TabsTrigger value="products">Products</TabsTrigger>
                       <TabsTrigger value="support">Support</TabsTrigger>
                     </TabsList>
@@ -375,31 +416,35 @@ const InitiativeDetail = () => {
                       )}
                     </TabsContent>
 
-                    <TabsContent value="video" className="mt-4">
-                      {ip.video_url ? (
+                    <TabsContent value="media" className="mt-4">
+                      {ip.media_url ? (
                         <Card>
                           <CardHeader>
                             <CardTitle className="text-sm flex items-center gap-2">
-                              <Video className="h-4 w-4" />
-                              {ip.video_title || 'Integration Tutorial'}
+                              {ip.media_type === 'video' && <Film className="h-4 w-4" />}
+                              {ip.media_type === 'audio' && <Music className="h-4 w-4" />}
+                              {ip.media_type === 'document' && <FileText className="h-4 w-4" />}
+                              {!ip.media_type && <Film className="h-4 w-4" />}
+                              {ip.media_title || 'Media'}
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
-                            {ip.video_description && (
+                            {ip.media_description && (
                               <p className="text-sm text-muted-foreground mb-4">
-                                {ip.video_description}
+                                {ip.media_description}
                               </p>
                             )}
-                            <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                              <SecureVideoPlayer 
-                                videoUrl={ip.video_url} 
-                                videoTitle={ip.video_title || 'Integration Tutorial'} 
+                            <div className={ip.media_type === 'video' || !ip.media_type ? "aspect-video rounded-lg overflow-hidden bg-muted" : ""}>
+                              <SecureMediaPlayer 
+                                mediaUrl={ip.media_url} 
+                                mediaTitle={ip.media_title || 'Media'} 
+                                mediaType={ip.media_type || 'video'}
                               />
                             </div>
                           </CardContent>
                         </Card>
                       ) : (
-                        <p className="text-muted-foreground">No video tutorial available.</p>
+                        <p className="text-muted-foreground">No media available.</p>
                       )}
                     </TabsContent>
 

@@ -44,7 +44,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Loader2, Plus, Trash2, Building2, DollarSign, FileCode, Video, Package, Image, Link2, Upload } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Trash2, Building2, DollarSign, FileCode, FileText, Package, Image, Link2, Upload, Music, Film } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -53,7 +53,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 const initiativeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  overview: z.string().optional(),
 });
 
 type InitiativeFormValues = z.infer<typeof initiativeSchema>;
@@ -71,10 +70,11 @@ const partnerDetailsSchema = z.object({
   terms_and_conditions: z.string().optional(),
   api_version: z.string().optional(),
   api_documentation: z.string().optional(),
-  video_source_type: z.enum(['link', 'upload']).optional(),
-  video_title: z.string().optional(),
-  video_url: z.string().optional(),
-  video_description: z.string().optional(),
+  media_source_type: z.enum(['link', 'upload']).optional(),
+  media_type: z.enum(['video', 'audio', 'document']).optional(),
+  media_title: z.string().optional(),
+  media_url: z.string().optional(),
+  media_description: z.string().optional(),
 });
 
 type PartnerFormValues = z.infer<typeof partnerDetailsSchema>;
@@ -88,9 +88,10 @@ const InitiativeForm = () => {
   const [showAddPartner, setShowAddPartner] = useState(false);
   const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [videoSourceType, setVideoSourceType] = useState<'link' | 'upload'>('link');
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [mediaSourceType, setMediaSourceType] = useState<'link' | 'upload'>('link');
+  const [mediaType, setMediaType] = useState<'video' | 'audio' | 'document'>('video');
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: initiative, isLoading: isLoadingInitiative } = useInitiative(id!);
@@ -111,7 +112,6 @@ const InitiativeForm = () => {
     defaultValues: {
       name: '',
       description: '',
-      overview: '',
     },
   });
 
@@ -130,10 +130,11 @@ const InitiativeForm = () => {
       terms_and_conditions: '',
       api_version: '1.0',
       api_documentation: '',
-      video_source_type: 'link',
-      video_title: '',
-      video_url: '',
-      video_description: '',
+      media_source_type: 'link',
+      media_type: 'video',
+      media_title: '',
+      media_url: '',
+      media_description: '',
     },
   });
 
@@ -142,7 +143,6 @@ const InitiativeForm = () => {
       form.reset({
         name: initiative.name,
         description: initiative.description || '',
-        overview: initiative.overview || '',
       });
     }
   }, [initiative, form]);
@@ -152,7 +152,7 @@ const InitiativeForm = () => {
       const payload = {
         name: data.name,
         description: data.description || null,
-        overview: data.overview || null,
+        overview: null,
         status: 'active',
         category: null,
         logo_url: null,
@@ -191,14 +191,16 @@ const InitiativeForm = () => {
       terms_and_conditions: '',
       api_version: '1.0',
       api_documentation: '',
-      video_source_type: 'link',
-      video_title: '',
-      video_url: '',
-      video_description: '',
+      media_source_type: 'link',
+      media_type: 'video',
+      media_title: '',
+      media_url: '',
+      media_description: '',
     });
     setSelectedProducts([]);
-    setVideoSourceType('link');
-    setVideoFile(null);
+    setMediaSourceType('link');
+    setMediaType('video');
+    setMediaFile(null);
   };
 
   const openAddPartner = () => {
@@ -208,7 +210,7 @@ const InitiativeForm = () => {
   };
 
   const openEditPartner = (initiativePartner: any) => {
-    const sourceType = initiativePartner.video_url ? 'link' : 'link';
+    const sourceType = initiativePartner.media_url ? 'link' : 'link';
     partnerForm.reset({
       partner_id: initiativePartner.partner_id,
       partner_logo_url: initiativePartner.partner?.logo_url || '',
@@ -222,46 +224,95 @@ const InitiativeForm = () => {
       terms_and_conditions: initiativePartner.terms_and_conditions || '',
       api_version: initiativePartner.api_version || '1.0',
       api_documentation: initiativePartner.api_documentation || '',
-      video_source_type: sourceType,
-      video_title: initiativePartner.video_title || '',
-      video_url: initiativePartner.video_url || '',
-      video_description: initiativePartner.video_description || '',
+      media_source_type: sourceType,
+      media_type: initiativePartner.media_type || 'video',
+      media_title: initiativePartner.media_title || '',
+      media_url: initiativePartner.media_url || '',
+      media_description: initiativePartner.media_description || '',
     });
     setSelectedProducts(initiativePartner.initiative_partner_products?.map((p: any) => p.product_id) || []);
-    setVideoSourceType(sourceType);
+    setMediaSourceType(sourceType);
+    setMediaType(initiativePartner.media_type || 'video');
     setEditingPartnerId(initiativePartner.id);
     setShowAddPartner(true);
   };
 
-  // Video file validation helper
-  const validateVideoFile = (file: File): { valid: boolean; error?: string } => {
-    // Check file extension
-    const validExtensions = ['mp4', 'webm', 'mov'];
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    if (!ext || !validExtensions.includes(ext)) {
-      return { valid: false, error: 'Invalid file extension. Allowed: mp4, webm, mov' };
-    }
-    
-    // Check MIME type
-    const validMimeTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
-    if (!validMimeTypes.includes(file.type)) {
-      return { valid: false, error: 'Invalid file type. Only video files are allowed.' };
-    }
-    
-    // Additional size check (100MB max)
-    const maxSize = 100 * 1024 * 1024;
+  // Media file validation helper
+  const validateMediaFile = (file: File, type: 'video' | 'audio' | 'document'): { valid: boolean; error?: string } => {
+    const maxSize = 100 * 1024 * 1024; // 100MB max
     if (file.size > maxSize) {
       return { valid: false, error: 'File too large. Maximum size is 100MB.' };
+    }
+
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    
+    if (type === 'video') {
+      const validExtensions = ['mp4', 'webm', 'mov'];
+      const validMimeTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+      if (!ext || !validExtensions.includes(ext)) {
+        return { valid: false, error: 'Invalid file extension. Allowed: mp4, webm, mov' };
+      }
+      if (!validMimeTypes.includes(file.type)) {
+        return { valid: false, error: 'Invalid file type. Only video files are allowed.' };
+      }
+    } else if (type === 'audio') {
+      const validExtensions = ['mp3', 'wav', 'ogg', 'm4a'];
+      const validMimeTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/x-m4a'];
+      if (!ext || !validExtensions.includes(ext)) {
+        return { valid: false, error: 'Invalid file extension. Allowed: mp3, wav, ogg, m4a' };
+      }
+      if (!validMimeTypes.includes(file.type)) {
+        return { valid: false, error: 'Invalid file type. Only audio files are allowed.' };
+      }
+    } else if (type === 'document') {
+      const validExtensions = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
+      const validMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      ];
+      if (!ext || !validExtensions.includes(ext)) {
+        return { valid: false, error: 'Invalid file extension. Allowed: pdf, doc, docx, ppt, pptx, xls, xlsx' };
+      }
+      if (!validMimeTypes.includes(file.type)) {
+        return { valid: false, error: 'Invalid file type. Only document files are allowed.' };
+      }
     }
     
     return { valid: true };
   };
 
+  // Get allowed file extensions based on media type
+  const getAcceptedFileTypes = (type: 'video' | 'audio' | 'document'): string => {
+    switch (type) {
+      case 'video': return 'video/mp4,video/webm,video/quicktime';
+      case 'audio': return 'audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/x-m4a';
+      case 'document': return 'application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx';
+    }
+  };
+
+  // Get file extension description
+  const getFileTypeDescription = (type: 'video' | 'audio' | 'document'): string => {
+    switch (type) {
+      case 'video': return 'Supports MP4, WebM, MOV (max 100MB)';
+      case 'audio': return 'Supports MP3, WAV, OGG, M4A (max 100MB)';
+      case 'document': return 'Supports PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX (max 100MB)';
+    }
+  };
+
   // Sanitize file extension for upload
-  const sanitizeExtension = (filename: string): string => {
+  const sanitizeExtension = (filename: string, type: 'video' | 'audio' | 'document'): string => {
     const ext = filename.split('.').pop()?.toLowerCase();
-    const allowedExts = ['mp4', 'webm', 'mov'];
-    return allowedExts.includes(ext || '') ? ext! : 'mp4';
+    const allowedExts: Record<string, string[]> = {
+      video: ['mp4', 'webm', 'mov'],
+      audio: ['mp3', 'wav', 'ogg', 'm4a'],
+      document: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx']
+    };
+    return allowedExts[type].includes(ext || '') ? ext! : allowedExts[type][0];
   };
 
   const onPartnerSubmit = async (data: PartnerFormValues) => {
@@ -276,30 +327,30 @@ const InitiativeForm = () => {
         });
       }
 
-      // Handle video file upload if a file was selected
-      let videoUrl = data.video_url || null;
-      if (videoSourceType === 'upload' && videoFile) {
-        // Validate the video file before upload
-        const validation = validateVideoFile(videoFile);
+      // Handle media file upload if a file was selected
+      let mediaUrl = data.media_url || null;
+      if (mediaSourceType === 'upload' && mediaFile) {
+        // Validate the media file before upload
+        const validation = validateMediaFile(mediaFile, mediaType);
         if (!validation.valid) {
           toast({
             variant: 'destructive',
-            title: 'Invalid video file',
+            title: 'Invalid media file',
             description: validation.error,
           });
           return;
         }
 
-        setIsUploadingVideo(true);
+        setIsUploadingMedia(true);
         try {
           // Use sanitized extension and random UUID for filename to prevent enumeration
-          const fileExt = sanitizeExtension(videoFile.name);
+          const fileExt = sanitizeExtension(mediaFile.name, mediaType);
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
-          const filePath = `videos/${fileName}`;
+          const filePath = `${mediaType}s/${fileName}`;
 
           const { error: uploadError } = await supabase.storage
             .from('partner-videos')
-            .upload(filePath, videoFile, {
+            .upload(filePath, mediaFile, {
               cacheControl: '3600',
               upsert: false, // Prevent overwriting existing files
             });
@@ -307,10 +358,10 @@ const InitiativeForm = () => {
           if (uploadError) throw uploadError;
 
           // Store the file path (not public URL) since bucket is now private
-          // The frontend will use signed URLs to access the video
-          videoUrl = filePath;
+          // The frontend will use signed URLs to access the media
+          mediaUrl = filePath;
         } finally {
-          setIsUploadingVideo(false);
+          setIsUploadingMedia(false);
         }
       }
 
@@ -326,9 +377,10 @@ const InitiativeForm = () => {
         terms_and_conditions: data.terms_and_conditions || null,
         api_version: data.api_version || null,
         api_documentation: data.api_documentation || null,
-        video_title: data.video_title || null,
-        video_url: videoUrl,
-        video_description: data.video_description || null,
+        media_type: mediaType,
+        media_title: data.media_title || null,
+        media_url: mediaUrl,
+        media_description: data.media_description || null,
       };
 
       let initiativePartnerId = editingPartnerId;
@@ -351,7 +403,7 @@ const InitiativeForm = () => {
       toast({ title: editingPartnerId ? 'Partner updated successfully' : 'Partner added successfully' });
       setShowAddPartner(false);
       resetPartnerForm();
-      setVideoFile(null);
+      setMediaFile(null);
     } catch (error) {
       console.error('Partner submit error:', error);
       toast({
@@ -443,26 +495,6 @@ const InitiativeForm = () => {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="overview"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Overview</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Detailed overview of the initiative..."
-                        className="min-h-[150px]"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Detailed information about the initiative's purpose and scope
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <div className="flex gap-4">
                 <Button
@@ -755,33 +787,71 @@ const InitiativeForm = () => {
 
                     <Separator />
 
-                    {/* Video Tutorial */}
+                    {/* Media Section */}
                     <div className="space-y-4">
                       <h4 className="font-medium flex items-center gap-2">
-                        <Video className="h-4 w-4" />
-                        Video Tutorial
+                        <FileText className="h-4 w-4" />
+                        Media
                       </h4>
                       
-                      {/* Video Source Type Toggle */}
+                      {/* Media Type Selection */}
                       <div className="space-y-2">
-                        <FormLabel>Video Source</FormLabel>
+                        <FormLabel>Media Type</FormLabel>
                         <RadioGroup
-                          value={videoSourceType}
-                          onValueChange={(value: 'link' | 'upload') => setVideoSourceType(value)}
+                          value={mediaType}
+                          onValueChange={(value: 'video' | 'audio' | 'document') => {
+                            setMediaType(value);
+                            setMediaFile(null);
+                            if (fileInputRef.current) {
+                              fileInputRef.current.value = '';
+                            }
+                          }}
                           className="flex gap-4"
                         >
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="link" id="video-link" />
-                            <label htmlFor="video-link" className="flex items-center gap-1 cursor-pointer text-sm">
-                              <Link2 className="h-4 w-4" />
-                              Video Link (URL)
+                            <RadioGroupItem value="video" id="media-video" />
+                            <label htmlFor="media-video" className="flex items-center gap-1 cursor-pointer text-sm">
+                              <Film className="h-4 w-4" />
+                              Video
                             </label>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="upload" id="video-upload" />
-                            <label htmlFor="video-upload" className="flex items-center gap-1 cursor-pointer text-sm">
+                            <RadioGroupItem value="audio" id="media-audio" />
+                            <label htmlFor="media-audio" className="flex items-center gap-1 cursor-pointer text-sm">
+                              <Music className="h-4 w-4" />
+                              Audio
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="document" id="media-document" />
+                            <label htmlFor="media-document" className="flex items-center gap-1 cursor-pointer text-sm">
+                              <FileText className="h-4 w-4" />
+                              Document
+                            </label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                      
+                      {/* Media Source Type Toggle */}
+                      <div className="space-y-2">
+                        <FormLabel>Media Source</FormLabel>
+                        <RadioGroup
+                          value={mediaSourceType}
+                          onValueChange={(value: 'link' | 'upload') => setMediaSourceType(value)}
+                          className="flex gap-4"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="link" id="media-link" />
+                            <label htmlFor="media-link" className="flex items-center gap-1 cursor-pointer text-sm">
+                              <Link2 className="h-4 w-4" />
+                              External Link (URL)
+                            </label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="upload" id="media-upload" />
+                            <label htmlFor="media-upload" className="flex items-center gap-1 cursor-pointer text-sm">
                               <Upload className="h-4 w-4" />
-                              Upload Video
+                              Upload File
                             </label>
                           </div>
                         </RadioGroup>
@@ -789,10 +859,10 @@ const InitiativeForm = () => {
 
                       <FormField
                         control={partnerForm.control}
-                        name="video_title"
+                        name="media_title"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Video Title</FormLabel>
+                            <FormLabel>Media Title</FormLabel>
                             <FormControl>
                               <Input placeholder="e.g., Integration Guide" {...field} />
                             </FormControl>
@@ -801,18 +871,20 @@ const InitiativeForm = () => {
                         )}
                       />
 
-                      {videoSourceType === 'link' ? (
+                      {mediaSourceType === 'link' ? (
                         <FormField
                           control={partnerForm.control}
-                          name="video_url"
+                          name="media_url"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Video URL</FormLabel>
+                              <FormLabel>Media URL</FormLabel>
                               <FormControl>
-                                <Input placeholder="https://youtube.com/watch?v=..." {...field} />
+                                <Input placeholder={mediaType === 'video' ? "https://youtube.com/watch?v=..." : "https://..."} {...field} />
                               </FormControl>
                               <FormDescription>
-                                Paste a link to YouTube, Vimeo, or any video hosting platform
+                                {mediaType === 'video' && 'Paste a link to YouTube, Vimeo, or any video hosting platform'}
+                                {mediaType === 'audio' && 'Paste a link to the audio file'}
+                                {mediaType === 'document' && 'Paste a link to the document (Google Drive, Dropbox, etc.)'}
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -823,12 +895,12 @@ const InitiativeForm = () => {
                           <input
                             type="file"
                             ref={fileInputRef}
-                            accept="video/mp4,video/webm,video/quicktime"
+                            accept={getAcceptedFileTypes(mediaType)}
                             className="hidden"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                setVideoFile(file);
+                                setMediaFile(file);
                               }
                             }}
                           />
@@ -837,17 +909,17 @@ const InitiativeForm = () => {
                             onClick={() => fileInputRef.current?.click()}
                           >
                             <Upload className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
-                            {videoFile ? (
+                            {mediaFile ? (
                               <div className="space-y-1">
-                                <p className="text-sm font-medium text-primary">{videoFile.name}</p>
+                                <p className="text-sm font-medium text-primary">{mediaFile.name}</p>
                                 <p className="text-xs text-muted-foreground">
-                                  {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                                  {(mediaFile.size / (1024 * 1024)).toFixed(2)} MB
                                 </p>
                               </div>
                             ) : (
                               <>
                                 <p className="text-sm text-muted-foreground mb-2">
-                                  Click to browse or drag and drop your video file here
+                                  Click to browse or drag and drop your {mediaType} file here
                                 </p>
                                 <Button type="button" variant="outline" size="sm" onClick={(e) => {
                                   e.stopPropagation();
@@ -858,17 +930,17 @@ const InitiativeForm = () => {
                               </>
                             )}
                             <p className="text-xs text-muted-foreground mt-2">
-                              Supports MP4, WebM, MOV (max 100MB)
+                              {getFileTypeDescription(mediaType)}
                             </p>
                           </div>
-                          {videoFile && (
+                          {mediaFile && (
                             <Button
                               type="button"
                               variant="ghost"
                               size="sm"
                               className="text-destructive"
                               onClick={() => {
-                                setVideoFile(null);
+                                setMediaFile(null);
                                 if (fileInputRef.current) {
                                   fileInputRef.current.value = '';
                                 }
@@ -878,20 +950,20 @@ const InitiativeForm = () => {
                             </Button>
                           )}
                           <p className="text-xs text-muted-foreground">
-                            Video will be uploaded when you click Update/Add Partner.
+                            File will be uploaded when you click Update/Add Partner.
                           </p>
                         </div>
                       )}
 
                       <FormField
                         control={partnerForm.control}
-                        name="video_description"
+                        name="media_description"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Video Description</FormLabel>
+                            <FormLabel>Media Description</FormLabel>
                             <FormControl>
                               <Textarea
-                                placeholder="Brief description of the video..."
+                                placeholder="Brief description of the media..."
                                 className="min-h-[80px]"
                                 {...field}
                               />
@@ -908,12 +980,12 @@ const InitiativeForm = () => {
                       </Button>
                       <Button 
                         type="submit" 
-                        disabled={createInitiativePartner.isPending || updateInitiativePartner.isPending || isUploadingVideo}
+                        disabled={createInitiativePartner.isPending || updateInitiativePartner.isPending || isUploadingMedia}
                       >
-                        {(createInitiativePartner.isPending || updateInitiativePartner.isPending || isUploadingVideo) && (
+                        {(createInitiativePartner.isPending || updateInitiativePartner.isPending || isUploadingMedia) && (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        {isUploadingVideo ? 'Uploading Video...' : editingPartnerId ? 'Update Partner' : 'Add Partner'}
+                        {isUploadingMedia ? 'Uploading Media...' : editingPartnerId ? 'Update Partner' : 'Add Partner'}
                       </Button>
                     </DialogFooter>
                   </form>

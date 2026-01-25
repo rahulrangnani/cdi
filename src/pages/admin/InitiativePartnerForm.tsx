@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Loader2, DollarSign, FileCode, Video, Settings } from 'lucide-react';
+import { ArrowLeft, Loader2, DollarSign, FileCode, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const partnerDetailsSchema = z.object({
@@ -41,11 +41,11 @@ const partnerDetailsSchema = z.object({
   // Technical Details
   api_version: z.string().optional(),
   api_documentation: z.string().url().optional().or(z.literal('')),
-  // Video Tutorial
-  video_title: z.string().optional(),
-  video_url: z.string().url().optional().or(z.literal('')),
-  video_duration: z.string().optional(),
-  video_description: z.string().optional(),
+  // Media
+  media_type: z.string().optional(),
+  media_title: z.string().optional(),
+  media_url: z.string().url().optional().or(z.literal('')),
+  media_description: z.string().optional(),
 });
 
 type PartnerDetailsFormValues = z.infer<typeof partnerDetailsSchema>;
@@ -71,10 +71,10 @@ const InitiativePartnerForm = () => {
       terms_and_conditions: '',
       api_version: '1.0',
       api_documentation: '',
-      video_title: '',
-      video_url: '',
-      video_duration: '',
-      video_description: '',
+      media_type: 'video',
+      media_title: '',
+      media_url: '',
+      media_description: '',
     },
   });
 
@@ -90,10 +90,10 @@ const InitiativePartnerForm = () => {
         terms_and_conditions: initiativePartner.terms_and_conditions || '',
         api_version: initiativePartner.api_version || '1.0',
         api_documentation: initiativePartner.api_documentation || '',
-        video_title: initiativePartner.video_title || '',
-        video_url: initiativePartner.video_url || '',
-        video_duration: initiativePartner.video_duration || '',
-        video_description: initiativePartner.video_description || '',
+        media_type: initiativePartner.media_type || 'video',
+        media_title: initiativePartner.media_title || '',
+        media_url: initiativePartner.media_url || '',
+        media_description: initiativePartner.media_description || '',
       });
     }
   }, [initiativePartner, form]);
@@ -113,10 +113,10 @@ const InitiativePartnerForm = () => {
         terms_and_conditions: data.terms_and_conditions || null,
         api_version: data.api_version || null,
         api_documentation: data.api_documentation || null,
-        video_title: data.video_title || null,
-        video_url: data.video_url || null,
-        video_duration: data.video_duration || null,
-        video_description: data.video_description || null,
+        media_type: data.media_type || 'video',
+        media_title: data.media_title || null,
+        media_url: data.media_url || null,
+        media_description: data.media_description || null,
       });
       toast({ title: 'Partner details updated successfully' });
       navigate(`/admin/initiatives/${initiativeId}/partners`);
@@ -167,9 +167,9 @@ const InitiativePartnerForm = () => {
                 <FileCode className="h-4 w-4" />
                 Technical
               </TabsTrigger>
-              <TabsTrigger value="video" className="flex items-center gap-2">
-                <Video className="h-4 w-4" />
-                Video Tutorial
+              <TabsTrigger value="media" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Media
               </TabsTrigger>
             </TabsList>
 
@@ -359,58 +359,36 @@ const InitiativePartnerForm = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="video" className="mt-6">
+            <TabsContent value="media" className="mt-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Video className="h-5 w-5" />
-                    Video Tutorial
+                    <FileText className="h-5 w-5" />
+                    Media
                   </CardTitle>
                   <CardDescription>
-                    Integration tutorial video for developers
+                    Media content for this integration (video, audio, or document)
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="video_title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Video Title</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., VKYC Integration Guide" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="video_duration"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Duration</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., 15:30" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
                   <FormField
                     control={form.control}
-                    name="video_url"
+                    name="media_type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Video URL</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://youtube.com/watch?v=..." {...field} />
-                        </FormControl>
-                        <FormDescription>YouTube or other video platform URL</FormDescription>
+                        <FormLabel>Media Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || 'video'}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="video">Video</SelectItem>
+                            <SelectItem value="audio">Audio</SelectItem>
+                            <SelectItem value="document">Document</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -418,13 +396,42 @@ const InitiativePartnerForm = () => {
 
                   <FormField
                     control={form.control}
-                    name="video_description"
+                    name="media_title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Video Description</FormLabel>
+                        <FormLabel>Media Title</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Integration Guide" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="media_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Media URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://..." {...field} />
+                        </FormControl>
+                        <FormDescription>Link to video, audio, or document</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="media_description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Media Description</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Brief description of what the video covers..."
+                            placeholder="Brief description of what the media covers..."
                             className="min-h-[100px]"
                             {...field}
                           />
