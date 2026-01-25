@@ -1,19 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
 import { useInitiatives } from '@/hooks/useInitiatives';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Users, ArrowRight, Loader2, Shield } from 'lucide-react';
-
+import { Search, Users, ArrowRight, Loader2 } from 'lucide-react';
 
 const Index = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const { isAdmin } = useAuth();
 
   const { data: initiatives, isLoading, error } = useInitiatives({
     status: statusFilter,
@@ -29,30 +26,7 @@ const Index = () => {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Hero Section - Green gradient */}
-      <div className="bg-gradient-to-r from-tvs-green to-tvs-green-dark rounded-xl p-8 text-white shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">Digital Initiatives Portal</h1>
-            <p className="text-white/90 max-w-2xl text-lg">
-              Discover and explore TVS Credit's digital initiatives, partner integrations, and API documentation
-            </p>
-          </div>
-          {!isAdmin && (
-            <Button 
-              variant="outline" 
-              className="border-white/50 bg-white/10 text-white hover:bg-white hover:text-tvs-green self-start sm:self-center"
-              asChild
-            >
-              <Link to="/login" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Admin Login
-              </Link>
-            </Button>
-          )}
-        </div>
-      </div>
+    <div className="space-y-6">
 
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
