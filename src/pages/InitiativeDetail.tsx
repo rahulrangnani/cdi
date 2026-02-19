@@ -3,12 +3,13 @@ import { useInitiative } from '@/hooks/useInitiatives';
 import { useApiDocuments, getSignedApiDocUrl } from '@/hooks/useApiDocuments';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  ArrowLeft, Building2, FileCode, FileText, Phone, Loader2, Copy, Check,
+  ArrowLeft, Building2, FileCode, FileText, Loader2, Copy, Check,
   Film, Music, CheckCircle2, XCircle, DollarSign, BarChart3, ExternalLink,
+  Users, TrendingUp,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +21,12 @@ import {
 
 const isStoragePath = (url: string) =>
   (url.startsWith('videos/') || url.startsWith('audios/') || url.startsWith('documents/')) && !url.startsWith('http');
+
+const formatCurrency = (value: any, currency?: string) => {
+  if (!value) return '—';
+  const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '₹';
+  return `${symbol}${Number(value).toLocaleString()}`;
+};
 
 // ─── Secure Media Player ─────────────────────────────────────────────────────
 
@@ -105,10 +112,87 @@ const ApiDocsList = ({ initiativePartnerId }: { initiativePartnerId: string }) =
   );
 };
 
+// ─── API Tab Content (checks both text docs and uploaded files) ──────────────
+
+const ApiTabContent = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | null; onCopy: (text: string, id: string) => void }) => {
+  const { data: docs } = useApiDocuments(ip.id);
+  const hasUploadedDocs = docs && docs.length > 0;
+  const hasApiUrl = !!ip.api_documentation;
+  const hasApiNotes = !!(ip as any).api_notes;
+  const hasApiSpecs = !!(ip.api_specifications && ip.api_specifications.length > 0);
+  const hasContent = hasApiUrl || hasApiNotes || hasApiSpecs || hasUploadedDocs;
+
+  return (
+    <div className="space-y-4">
+      {hasApiUrl && (
+        <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+          <FileCode className="h-4 w-4 text-primary shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground">Documentation URL</p>
+            <a href={ip.api_documentation} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate block">{ip.api_documentation}</a>
+          </div>
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => onCopy(ip.api_documentation, `doc-${ip.id}`)}>
+            {copiedId === `doc-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+      )}
+
+      {hasApiNotes && (
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">API Notes</p>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3">{(ip as any).api_notes}</p>
+        </div>
+      )}
+
+      <ApiDocsList initiativePartnerId={ip.id} />
+
+      {hasApiSpecs && (
+        <div className="space-y-3">
+          {ip.api_specifications.map((spec: any) => (
+            <div key={spec.id} className="space-y-3">
+              <p className="text-sm font-semibold">API Specification v{spec.version}</p>
+              {spec.input_parameters && Array.isArray(spec.input_parameters) && (spec.input_parameters as any[]).length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Input Parameters</p>
+                  <div className="overflow-x-auto rounded-lg border border-border/50">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead className="text-xs">Name</TableHead>
+                          <TableHead className="text-xs">Type</TableHead>
+                          <TableHead className="text-xs">Required</TableHead>
+                          <TableHead className="text-xs">Description</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {(spec.input_parameters as Array<{ name: string; type: string; required: boolean; description: string }>).map((param, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="font-mono text-xs">{param.name}</TableCell>
+                            <TableCell className="text-xs">{param.type}</TableCell>
+                            <TableCell><Badge variant={param.required ? 'default' : 'secondary'} className="text-xs">{param.required ? 'Yes' : 'No'}</Badge></TableCell>
+                            <TableCell className="text-xs text-muted-foreground">{param.description}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!hasContent && (
+        <p className="text-sm text-muted-foreground">No API documentation available.</p>
+      )}
+    </div>
+  );
+};
+
 // ─── Feature Comparison Table ─────────────────────────────────────────────────
 
-const FeatureComparison = ({ initiativePartners }: { initiativePartners: any[] }) => {
-  // Collect all unique feature names
+const FeatureComparisonTable = ({ initiativePartners }: { initiativePartners: any[] }) => {
   const allFeatures = Array.from(
     new Set(
       initiativePartners.flatMap((ip) =>
@@ -117,115 +201,142 @@ const FeatureComparison = ({ initiativePartners }: { initiativePartners: any[] }
     )
   ).sort();
 
-  if (allFeatures.length === 0) return null;
+  if (allFeatures.length === 0) return (
+    <div className="text-center py-8 text-muted-foreground">
+      <CheckCircle2 className="mx-auto h-8 w-8 mb-2 opacity-40" />
+      <p className="text-sm">No features configured for comparison yet.</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
-        <BarChart3 className="h-5 w-5 text-primary" />
-        Feature Comparison
-      </h3>
-      <div className="overflow-x-auto rounded-xl border border-border/60 shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-48 font-semibold">Feature</TableHead>
-              {initiativePartners.map((ip) => (
-                <TableHead key={ip.id} className="text-center font-semibold min-w-[120px]">
-                  <div className="flex flex-col items-center gap-1">
-                    {ip.partner?.logo_url ? (
-                      <img src={ip.partner.logo_url} alt={ip.partner.name} className="h-6 w-auto object-contain" />
-                    ) : null}
-                    <span className="text-xs">{ip.partner?.name}</span>
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {allFeatures.map((featureName, idx) => (
-              <TableRow key={featureName} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
-                <TableCell className="font-medium text-sm">{featureName}</TableCell>
-                {initiativePartners.map((ip) => {
-                  const feat = (ip.partner_features || []).find((f: any) => f.feature_name === featureName);
-                  return (
-                    <TableCell key={ip.id} className="text-center">
-                      {!feat ? (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      ) : feat.is_available ? (
-                        <div className="flex flex-col items-center gap-0.5">
-                          <CheckCircle2 className="h-5 w-5 text-primary mx-auto" />
-                          {feat.notes && <span className="text-xs text-muted-foreground">{feat.notes}</span>}
-                        </div>
-                      ) : (
-                        <XCircle className="h-5 w-5 text-muted-foreground/50 mx-auto" />
-                      )}
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
+    <div className="overflow-x-auto rounded-xl border border-border/60 shadow-sm">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead className="w-48 font-semibold">Feature</TableHead>
+            {initiativePartners.map((ip) => (
+              <TableHead key={ip.id} className="text-center font-semibold min-w-[120px]">
+                <div className="flex flex-col items-center gap-1">
+                  {ip.partner?.logo_url ? (
+                    <img src={ip.partner.logo_url} alt={ip.partner.name} className="h-6 w-auto object-contain" />
+                  ) : null}
+                  <span className="text-xs">{ip.partner?.name}</span>
+                </div>
+              </TableHead>
             ))}
-          </TableBody>
-        </Table>
-      </div>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {allFeatures.map((featureName, idx) => (
+            <TableRow key={featureName} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+              <TableCell className="font-medium text-sm">{featureName}</TableCell>
+              {initiativePartners.map((ip) => {
+                const feat = (ip.partner_features || []).find((f: any) => f.feature_name === featureName);
+                return (
+                  <TableCell key={ip.id} className="text-center">
+                    {!feat ? (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    ) : feat.is_available ? (
+                      <div className="flex flex-col items-center gap-0.5">
+                        <CheckCircle2 className="h-5 w-5 text-primary mx-auto" />
+                        {feat.notes && <span className="text-xs text-muted-foreground">{feat.notes}</span>}
+                      </div>
+                    ) : (
+                      <XCircle className="h-5 w-5 text-muted-foreground/50 mx-auto" />
+                    )}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
 
 // ─── Commercial Comparison Table ──────────────────────────────────────────────
 
-const CommercialComparison = ({ initiativePartners }: { initiativePartners: any[] }) => {
-  if (initiativePartners.length < 2) return null;
-
+const CommercialComparisonTable = ({ initiativePartners }: { initiativePartners: any[] }) => {
   const rows = [
-    { label: 'Integration Cost', key: 'integration_cost', format: (v: any) => v ? `₹${Number(v).toLocaleString()}` : '—' },
-    { label: 'Annual Cost', key: 'annual_cost', format: (v: any) => v ? `₹${Number(v).toLocaleString()}` : '—' },
-    { label: 'Price Per Call', key: 'pricing_per_call', format: (v: any, ip: any) => v ? `₹${v} / ${ip.pricing_unit || 'call'}` : '—' },
+    { label: 'Integration Cost', key: 'integration_cost', format: (v: any, ip: any) => v ? formatCurrency(v, ip.currency) : '—' },
+    { label: 'Annual Cost', key: 'annual_cost', format: (v: any, ip: any) => v ? formatCurrency(v, ip.currency) : '—' },
+    { label: 'Price Per Call', key: 'pricing_per_call', format: (v: any, ip: any) => v ? `${formatCurrency(v, ip.currency)} / ${ip.pricing_unit || 'call'}` : '—' },
     { label: 'Billing Contact', key: 'billing_contact', format: (v: any) => v || '—' },
   ];
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
-        <DollarSign className="h-5 w-5 text-primary" />
-        Commercial Comparison
-      </h3>
-      <div className="overflow-x-auto rounded-xl border border-border/60 shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-48 font-semibold">Detail</TableHead>
+    <div className="overflow-x-auto rounded-xl border border-border/60 shadow-sm">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead className="w-48 font-semibold">Detail</TableHead>
+            {initiativePartners.map((ip) => (
+              <TableHead key={ip.id} className="text-center font-semibold min-w-[140px]">
+                <div className="flex flex-col items-center gap-1">
+                  {ip.partner?.logo_url ? (
+                    <img src={ip.partner.logo_url} alt={ip.partner.name} className="h-6 w-auto object-contain" />
+                  ) : null}
+                  <span className="text-xs">{ip.partner?.name}</span>
+                </div>
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row, idx) => (
+            <TableRow key={row.key} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+              <TableCell className="font-medium text-sm">{row.label}</TableCell>
               {initiativePartners.map((ip) => (
-                <TableHead key={ip.id} className="text-center font-semibold min-w-[140px]">
-                  <div className="flex flex-col items-center gap-1">
-                    {ip.partner?.logo_url ? (
-                      <img src={ip.partner.logo_url} alt={ip.partner.name} className="h-6 w-auto object-contain" />
-                    ) : null}
-                    <span className="text-xs">{ip.partner?.name}</span>
-                  </div>
-                </TableHead>
+                <TableCell key={ip.id} className="text-center text-sm">
+                  {row.format((ip as any)[row.key], ip)}
+                </TableCell>
               ))}
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.map((row, idx) => (
-              <TableRow key={row.key} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
-                <TableCell className="font-medium text-sm">{row.label}</TableCell>
-                {initiativePartners.map((ip) => (
-                  <TableCell key={ip.id} className="text-center text-sm">
-                    {row.format((ip as any)[row.key], ip)}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
+
+// ─── Partner Comparison Section ───────────────────────────────────────────────
+
+const PartnerComparison = ({ initiativePartners }: { initiativePartners: any[] }) => {
+  if (initiativePartners.length < 2) return null;
+
+  return (
+    <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
+      <div className="flex items-center gap-3 px-6 py-4 bg-muted/30 border-b border-border/50">
+        <BarChart3 className="h-5 w-5 text-primary" />
+        <h2 className="text-lg font-semibold">Partner Comparison</h2>
+        <Badge variant="secondary" className="ml-auto">{initiativePartners.length} partners</Badge>
+      </div>
+      <div className="p-6">
+        <Tabs defaultValue="features" className="w-full">
+          <TabsList className="mb-6">
+            <TabsTrigger value="features" className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Features
+            </TabsTrigger>
+            <TabsTrigger value="commercials" className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4" />
+              Commercials
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="features" className="mt-0">
+            <FeatureComparisonTable initiativePartners={initiativePartners} />
+          </TabsContent>
+          <TabsContent value="commercials" className="mt-0">
+            <CommercialComparisonTable initiativePartners={initiativePartners} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 };
 
-// ─── Partner Card (improved UI) ───────────────────────────────────────────────
+// ─── Partner Card ─────────────────────────────────────────────────────────────
 
 const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | null; onCopy: (text: string, id: string) => void }) => {
   return (
@@ -242,7 +353,7 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
         <div className="flex-1">
           <h3 className="font-bold text-base">{ip.partner?.name}</h3>
           <p className="text-xs text-muted-foreground">
-            {ip.pricing_per_call ? `₹${ip.pricing_per_call} / ${ip.pricing_unit || 'call'}` : 'Pricing on request'}
+            {ip.pricing_per_call ? `${ip.currency === 'USD' ? '$' : ip.currency === 'EUR' ? '€' : '₹'}${ip.pricing_per_call} / ${ip.pricing_unit || 'call'}` : 'Pricing on request'}
           </p>
         </div>
         <Badge variant="outline" className="text-xs">v{ip.api_version || '1.0'}</Badge>
@@ -263,9 +374,9 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
             <TabsContent value="commercial" className="mt-0 space-y-4">
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
-                  { label: 'Price Per Call', value: ip.pricing_per_call ? `${ip.currency === 'USD' ? '$' : ip.currency === 'EUR' ? '€' : '₹'}${ip.pricing_per_call}` : 'N/A', sub: ip.pricing_unit },
-                  { label: 'Integration Cost', value: ip.integration_cost ? `₹${Number(ip.integration_cost).toLocaleString()}` : 'N/A' },
-                  { label: 'Annual Cost', value: ip.annual_cost ? `₹${Number(ip.annual_cost).toLocaleString()}` : 'N/A' },
+                  { label: 'Price Per Call', value: ip.pricing_per_call ? formatCurrency(ip.pricing_per_call, ip.currency) : 'N/A', sub: ip.pricing_unit },
+                  { label: 'Integration Cost', value: ip.integration_cost ? formatCurrency(ip.integration_cost, ip.currency) : 'N/A' },
+                  { label: 'Annual Cost', value: ip.annual_cost ? formatCurrency(ip.annual_cost, ip.currency) : 'N/A' },
                 ].map((item) => (
                   <div key={item.label} className="bg-muted/30 rounded-lg px-3 py-2.5">
                     <p className="text-xs text-muted-foreground mb-0.5">{item.label}</p>
@@ -284,69 +395,8 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
               )}
             </TabsContent>
 
-            <TabsContent value="api" className="mt-0 space-y-4">
-              {ip.api_documentation && (
-                <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-                  <FileCode className="h-4 w-4 text-primary shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground">Documentation URL</p>
-                    <a href={ip.api_documentation} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate block">{ip.api_documentation}</a>
-                  </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => onCopy(ip.api_documentation, `doc-${ip.id}`)}>
-                    {copiedId === `doc-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                  </Button>
-                </div>
-              )}
-
-              {(ip as any).api_notes && (
-                <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">API Notes</p>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3">{(ip as any).api_notes}</p>
-                </div>
-              )}
-
-              <ApiDocsList initiativePartnerId={ip.id} />
-
-              {ip.api_specifications && ip.api_specifications.length > 0 && (
-                <div className="space-y-3">
-                  {ip.api_specifications.map((spec: any) => (
-                    <div key={spec.id} className="space-y-3">
-                      <p className="text-sm font-semibold">API Specification v{spec.version}</p>
-                      {spec.input_parameters && Array.isArray(spec.input_parameters) && (spec.input_parameters as any[]).length > 0 && (
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Input Parameters</p>
-                          <div className="overflow-x-auto rounded-lg border border-border/50">
-                            <Table>
-                              <TableHeader>
-                                <TableRow className="bg-muted/30">
-                                  <TableHead className="text-xs">Name</TableHead>
-                                  <TableHead className="text-xs">Type</TableHead>
-                                  <TableHead className="text-xs">Required</TableHead>
-                                  <TableHead className="text-xs">Description</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {(spec.input_parameters as Array<{ name: string; type: string; required: boolean; description: string }>).map((param, idx) => (
-                                  <TableRow key={idx}>
-                                    <TableCell className="font-mono text-xs">{param.name}</TableCell>
-                                    <TableCell className="text-xs">{param.type}</TableCell>
-                                    <TableCell><Badge variant={param.required ? 'default' : 'secondary'} className="text-xs">{param.required ? 'Yes' : 'No'}</Badge></TableCell>
-                                    <TableCell className="text-xs text-muted-foreground">{param.description}</TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {!ip.api_documentation && !(ip as any).api_notes && (!ip.api_specifications || ip.api_specifications.length === 0) && (
-                <p className="text-sm text-muted-foreground">No API documentation available.</p>
-              )}
+            <TabsContent value="api" className="mt-0">
+              <ApiTabContent ip={ip} copiedId={copiedId} onCopy={onCopy} />
             </TabsContent>
 
             <TabsContent value="media" className="mt-0">
@@ -467,21 +517,13 @@ const InitiativeDetail = () => {
         </div>
       </div>
 
-      {/* Comparison Tables */}
-      {partners.length >= 2 && (
-        <div className="space-y-6">
-          <FeatureComparison initiativePartners={partners} />
-          <CommercialComparison initiativePartners={partners} />
-        </div>
-      )}
-
-      {/* Partner Cards */}
+      {/* Partner Details — shown first */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <Building2 className="h-5 w-5" />
-          Partner Integrations
+        <div className="flex items-center gap-2">
+          <Users className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold">Partner Details</h2>
           <Badge variant="secondary" className="ml-1">{partners.length}</Badge>
-        </h2>
+        </div>
 
         {partners.length > 0 ? (
           <div className="grid gap-6 lg:grid-cols-1 xl:grid-cols-2">
@@ -493,11 +535,16 @@ const InitiativeDetail = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No partner integrations configured yet.</p>
+              <p className="text-muted-foreground">No partner details configured yet.</p>
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Partner Comparison — shown below partner details, only when 2+ partners */}
+      {partners.length >= 2 && (
+        <PartnerComparison initiativePartners={partners} />
+      )}
     </div>
   );
 };
