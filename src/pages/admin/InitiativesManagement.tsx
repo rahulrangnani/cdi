@@ -1,18 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useInitiatives, useDeleteInitiative } from '@/hooks/useInitiatives';
-import { ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,155 +21,358 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2 } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  Loader2,
+  FolderOpen,
+  Layers,
+  ChevronRight,
+  Building2,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const InitiativesManagement = () => {
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  // Fetch ALL initiatives (no parentId filter) for admin view
-  const { data: initiatives, isLoading } = useInitiatives({ search });
+
+  // Fetch all initiatives (no filter) for admin view
+  const { data: allInitiatives, isLoading } = useInitiatives({ search });
   const deleteInitiative = useDeleteInitiative();
   const { toast } = useToast();
 
+  // Separate main categories and sub-initiatives
+  const mainCategories = allInitiatives?.filter((i) => !i.parent_id) ?? [];
+  const subInitiatives = allInitiatives?.filter((i) => !!i.parent_id) ?? [];
+
+  // Group sub-initiatives by parent_id
+  const subsByParent: Record<string, typeof subInitiatives> = {};
+  subInitiatives.forEach((sub) => {
+    const pid = (sub as any).parent_id as string;
+    if (!subsByParent[pid]) subsByParent[pid] = [];
+    subsByParent[pid].push(sub);
+  });
+
   const handleDelete = async () => {
     if (!deleteId) return;
-
     try {
       await deleteInitiative.mutateAsync(deleteId);
-      toast({ title: 'Initiative deleted successfully' });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to delete initiative',
-        description: 'Please try again.',
-      });
+      toast({ title: 'Deleted successfully' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Failed to delete', description: 'Please try again.' });
     } finally {
       setDeleteId(null);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Initiatives</h1>
-          <p className="text-muted-foreground">Manage digital initiatives</p>
+          <p className="text-muted-foreground mt-1">
+            Manage main categories and their sub-initiatives
+          </p>
         </div>
-        <Button asChild>
-          <Link to="/admin/initiatives/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Initiative
-          </Link>
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" asChild>
+            <Link to="/admin/categories/new">
+              <FolderOpen className="mr-2 h-4 w-4" />
+              Add Main Category
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/admin/initiatives/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Sub-Initiative
+            </Link>
+          </Button>
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search initiatives..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
-        </div>
+      {/* Search */}
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search initiatives..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Partners</TableHead>
-                <TableHead>Last Updated</TableHead>
-                <TableHead className="w-[70px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {initiatives && initiatives.length > 0 ? (
-                initiatives.map((initiative) => (
-                  <TableRow key={initiative.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {(initiative as any).parent_id && (
-                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground ml-2 shrink-0" />
-                        )}
-                        <span className={`font-medium ${(initiative as any).parent_id ? 'text-muted-foreground' : ''}`}>
-                          {initiative.name}
-                        </span>
-                        {!(initiative as any).parent_id && (
-                          <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded font-medium ml-1">Main</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{initiative.category || '-'}</TableCell>
-                    <TableCell>
-                      <Badge variant={initiative.status === 'active' ? 'default' : 'secondary'}>
-                        {initiative.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{initiative.initiative_partners?.length || 0}</TableCell>
-                    <TableCell>
-                      {new Date(initiative.updated_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link to={`/admin/initiatives/${initiative.id}`}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setDeleteId(initiative.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                    No initiatives found
-                  </TableCell>
-                </TableRow>
+        <div className="space-y-6">
+          {mainCategories.length === 0 && subInitiatives.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border rounded-xl text-center">
+              <Layers className="h-12 w-12 text-muted-foreground mb-3" />
+              <p className="text-lg font-medium text-muted-foreground">No initiatives yet</p>
+              <p className="text-sm text-muted-foreground mt-1 mb-4">
+                Start by creating a Main Category (e.g., KYC, Voice Bots)
+              </p>
+              <Button asChild>
+                <Link to="/admin/categories/new">
+                  <FolderOpen className="mr-2 h-4 w-4" />
+                  Add Main Category
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <>
+              {/* Main Categories Section */}
+              {mainCategories.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <FolderOpen className="h-4 w-4 text-primary" />
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      Main Categories
+                    </h2>
+                    <Badge variant="secondary" className="text-xs">{mainCategories.length}</Badge>
+                  </div>
+
+                  <div className="space-y-4">
+                    {mainCategories.map((category) => {
+                      const subs = subsByParent[category.id] ?? [];
+                      return (
+                        <Card key={category.id} className="border border-border/60">
+                          {/* Category header row */}
+                          <CardHeader className="pb-3 pt-4 px-5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                  <FolderOpen className="h-4 w-4 text-primary" />
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-base text-foreground truncate">
+                                      {category.name}
+                                    </span>
+                                    <Badge variant="outline" className="text-xs shrink-0 border-primary/40 text-primary">
+                                      Main Category
+                                    </Badge>
+                                    <Badge
+                                      variant={category.status === 'active' ? 'default' : 'secondary'}
+                                      className="text-xs shrink-0"
+                                    >
+                                      {category.status}
+                                    </Badge>
+                                  </div>
+                                  {category.description && (
+                                    <p className="text-sm text-muted-foreground mt-0.5 truncate max-w-md">
+                                      {category.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-xs text-muted-foreground">
+                                  {subs.length} sub-initiative{subs.length !== 1 ? 's' : ''}
+                                </span>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem asChild>
+                                      <Link to={`/admin/categories/${category.id}`}>
+                                        <Pencil className="mr-2 h-4 w-4" />
+                                        Edit Category
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() => setDeleteId(category.id)}
+                                    >
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete Category
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          </CardHeader>
+
+                          {/* Sub-initiatives under this category */}
+                          {subs.length > 0 && (
+                            <CardContent className="pt-0 pb-3 px-5">
+                              <div className="border-t border-border/50 pt-3 space-y-2">
+                                {subs.map((sub) => (
+                                  <div
+                                    key={sub.id}
+                                    className="flex items-center justify-between pl-6 pr-2 py-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
+                                  >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                      <div className="h-7 w-7 rounded-md bg-background border border-border/60 flex items-center justify-center shrink-0">
+                                        <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <span className="font-medium text-sm text-foreground truncate block">
+                                          {sub.name}
+                                        </span>
+                                        {sub.description && (
+                                          <span className="text-xs text-muted-foreground truncate block max-w-xs">
+                                            {sub.description}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                        <Building2 className="h-3.5 w-3.5" />
+                                        <span>{sub.initiative_partners?.length || 0} partner{(sub.initiative_partners?.length || 0) !== 1 ? 's' : ''}</span>
+                                      </div>
+                                      <Badge
+                                        variant={sub.status === 'active' ? 'default' : 'secondary'}
+                                        className="text-xs"
+                                      >
+                                        {sub.status}
+                                      </Badge>
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <MoreHorizontal className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem asChild>
+                                            <Link to={`/admin/initiatives/${sub.id}`}>
+                                              <Pencil className="mr-2 h-4 w-4" />
+                                              Edit & Manage Partners
+                                            </Link>
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="text-destructive"
+                                            onClick={() => setDeleteId(sub.id)}
+                                          >
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          )}
+
+                          {/* Empty state for category with no subs */}
+                          {subs.length === 0 && (
+                            <CardContent className="pt-0 pb-4 px-5">
+                              <div className="border-t border-border/50 pt-3">
+                                <div className="pl-6 flex items-center gap-2 text-sm text-muted-foreground">
+                                  <span>No sub-initiatives yet.</span>
+                                  <Link
+                                    to="/admin/initiatives/new"
+                                    className="text-primary hover:underline font-medium"
+                                  >
+                                    Add one →
+                                  </Link>
+                                </div>
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </section>
               )}
-            </TableBody>
-          </Table>
+
+              {/* Unassigned sub-initiatives (have parent but parent not found in results) */}
+              {(() => {
+                const unassigned = subInitiatives.filter(
+                  (s) => !mainCategories.find((c) => c.id === (s as any).parent_id)
+                );
+                if (unassigned.length === 0) return null;
+                return (
+                  <section>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Layers className="h-4 w-4 text-warning" />
+                      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                        Sub-Initiatives (uncategorized / search results)
+                      </h2>
+                      <Badge variant="secondary" className="text-xs">{unassigned.length}</Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {unassigned.map((sub) => (
+                        <div
+                          key={sub.id}
+                          className="flex items-center justify-between px-4 py-3 rounded-lg border border-border/60 bg-card hover:border-primary/30 transition-colors group"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <div className="min-w-0">
+                              <span className="font-medium text-sm truncate block">{sub.name}</span>
+                              {sub.description && (
+                                <span className="text-xs text-muted-foreground truncate block">{sub.description}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge variant={sub.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                              {sub.status}
+                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                  <Link to={`/admin/initiatives/${sub.id}`}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Edit & Manage Partners
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => setDeleteId(sub.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })()}
+            </>
+          )}
         </div>
       )}
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Initiative</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this initiative? This action cannot be undone and will
-              also remove all associated partner configurations.
+              This will permanently delete this item and all associated partner configurations.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

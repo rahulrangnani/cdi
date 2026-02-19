@@ -472,19 +472,23 @@ const InitiativeForm = () => {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {isEditing ? 'Edit Initiative' : 'Create Initiative'}
+            {isEditing ? 'Edit Sub-Initiative' : 'Create Sub-Initiative'}
           </h1>
           <p className="text-muted-foreground">
-            {isEditing ? 'Update initiative details and manage partners' : 'Add a new digital initiative'}
+            {isEditing
+              ? 'Update details and manage partner integrations'
+              : 'Add a sub-initiative under a main category (e.g., VKYC under KYC)'}
           </p>
         </div>
       </div>
 
-      {/* Initiative Basic Details */}
+      {/* Sub-Initiative Basic Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Initiative Details</CardTitle>
-          <CardDescription>Basic information about the initiative</CardDescription>
+          <CardTitle>Sub-Initiative Details</CardTitle>
+          <CardDescription>
+            A sub-initiative lives under a main category and directly maps to partner integrations
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -508,27 +512,28 @@ const InitiativeForm = () => {
                 name="parent_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Parent Category</FormLabel>
+                    <FormLabel>Main Category *</FormLabel>
                     <Select
                       onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)}
                       value={field.value || '__none__'}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select parent (leave empty for main category)" />
+                          <SelectValue placeholder="Select a main category (e.g., KYC, Voice Bots)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="__none__">— No parent (Main Category) —</SelectItem>
+                        <SelectItem value="__none__">— Select a main category —</SelectItem>
                         {parentInitiatives
-                          ?.filter(p => p.id !== id) // can't be own parent
+                          ?.filter(p => p.id !== id)
                           .map((p) => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Set a parent to make this a sub-initiative (e.g., VKYC under KYC)
+                      Tag this sub-initiative to a main category (e.g., VKYC → KYC). If no categories exist yet,{' '}
+                      <Link to="/admin/categories/new" className="text-primary underline">create one first</Link>.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -554,7 +559,7 @@ const InitiativeForm = () => {
                   {(createInitiative.isPending || updateInitiative.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {isEditing ? 'Update Initiative' : 'Create Initiative'}
+                  {isEditing ? 'Update Sub-Initiative' : 'Create Sub-Initiative'}
                 </Button>
                 <Button type="button" variant="outline" asChild>
                   <Link to="/admin/initiatives">Cancel</Link>
