@@ -71,6 +71,7 @@ const partnerDetailsSchema = z.object({
   annual_cost: z.string().optional(),
   pricing_per_call: z.string().optional(),
   pricing_unit: z.string().optional(),
+  pricing_unit_custom: z.string().optional(),
   currency: z.string().optional(),
   billing_contact: z.string().optional(),
   terms_and_conditions: z.string().optional(),
@@ -153,6 +154,7 @@ const InitiativeForm = () => {
       annual_cost: '',
       pricing_per_call: '',
       pricing_unit: 'Per Call',
+      pricing_unit_custom: '',
       currency: 'INR',
       billing_contact: '',
       terms_and_conditions: '',
@@ -219,6 +221,7 @@ const InitiativeForm = () => {
       annual_cost: '',
       pricing_per_call: '',
       pricing_unit: 'Per Call',
+      pricing_unit_custom: '',
       currency: 'INR',
       billing_contact: '',
       terms_and_conditions: '',
@@ -386,7 +389,9 @@ const InitiativeForm = () => {
         integration_cost: data.integration_cost ? parseFloat(data.integration_cost) : null,
         annual_cost: data.annual_cost ? parseFloat(data.annual_cost) : null,
         pricing_per_call: data.pricing_per_call ? parseFloat(data.pricing_per_call) : null,
-        pricing_unit: data.pricing_unit || null,
+        pricing_unit: data.pricing_unit === 'Custom'
+          ? (data.pricing_unit_custom?.trim() || 'Custom')
+          : (data.pricing_unit || null),
         currency: data.currency || null,
         billing_contact: data.billing_contact || null,
         terms_and_conditions: data.terms_and_conditions || null,
@@ -733,21 +738,38 @@ const InitiativeForm = () => {
                             <FormMessage />
                           </FormItem>
                         )} />
-                        <FormField control={partnerForm.control} name="pricing_unit" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Pricing Unit</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl>
-                              <SelectContent>
-                                <SelectItem value="Per Call">Per Call</SelectItem>
-                                <SelectItem value="Per Transaction">Per Transaction</SelectItem>
-                                <SelectItem value="Per Month">Per Month</SelectItem>
-                                <SelectItem value="Per User">Per User</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
+                        <div className="space-y-2">
+                          <FormField control={partnerForm.control} name="pricing_unit" render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Pricing Unit</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                  <SelectItem value="Per Call">Per Call</SelectItem>
+                                  <SelectItem value="Per API Call">Per API Call</SelectItem>
+                                  <SelectItem value="Per Transaction">Per Transaction</SelectItem>
+                                  <SelectItem value="Per Month">Per Month</SelectItem>
+                                  <SelectItem value="Per User">Per User</SelectItem>
+                                  <SelectItem value="Per Verification">Per Verification</SelectItem>
+                                  <SelectItem value="Per Document">Per Document</SelectItem>
+                                  <SelectItem value="Custom">Custom</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                          {partnerForm.watch('pricing_unit') === 'Custom' && (
+                            <FormField control={partnerForm.control} name="pricing_unit_custom" render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs text-muted-foreground">Custom Pricing Label <span className="font-normal">(Optional)</span></FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., Per KYC Journey, Per Scan…" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          )}
+                        </div>
                         <FormField control={partnerForm.control} name="currency" render={({ field }) => (
                           <FormItem>
                             <FormLabel>Currency</FormLabel>

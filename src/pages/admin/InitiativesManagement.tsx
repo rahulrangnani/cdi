@@ -44,9 +44,14 @@ const InitiativesManagement = () => {
   const deleteInitiative = useDeleteInitiative();
   const { toast } = useToast();
 
-  // Separate main categories and sub-initiatives
-  const mainCategories = allInitiatives?.filter((i) => !i.parent_id) ?? [];
+  // Separate:
+  // - Sub-initiatives: have a parent_id
+  // - Main categories: no parent_id AND no direct partners (they serve as folder/drill-down)
+  // - Standalone initiatives: no parent_id AND have direct partners (shown directly on portal)
   const subInitiatives = allInitiatives?.filter((i) => !!i.parent_id) ?? [];
+  const topLevel = allInitiatives?.filter((i) => !i.parent_id) ?? [];
+  const mainCategories = topLevel.filter((i) => (i.initiative_partners?.length || 0) === 0);
+  const standaloneInitiatives = topLevel.filter((i) => (i.initiative_partners?.length || 0) > 0);
 
   // Group sub-initiatives by parent_id
   const subsByParent: Record<string, typeof subInitiatives> = {};
@@ -111,7 +116,7 @@ const InitiativesManagement = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          {mainCategories.length === 0 && subInitiatives.length === 0 ? (
+          {mainCategories.length === 0 && standaloneInitiatives.length === 0 && subInitiatives.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border rounded-xl text-center">
               <Layers className="h-12 w-12 text-muted-foreground mb-3" />
               <p className="text-lg font-medium text-muted-foreground">No initiatives yet</p>
@@ -298,71 +303,67 @@ const InitiativesManagement = () => {
                 </section>
               )}
 
-              {/* Standalone initiatives (no parent category) */}
-              {(() => {
-                const standalone = allInitiatives?.filter((i) => !i.parent_id && !mainCategories.find(c => c.id === i.id)) ?? [];
-                if (standalone.length === 0) return null;
-                return (
-                  <section>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Layers className="h-4 w-4 text-primary" />
-                      <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Standalone Initiatives
-                      </h2>
-                      <Badge variant="secondary" className="text-xs">{standalone.length}</Badge>
-                    </div>
-                    <div className="space-y-2">
-                      {standalone.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between px-4 py-3 rounded-lg border border-border/60 bg-card hover:border-primary/30 transition-colors group"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
-                            <div className="min-w-0">
-                              <span className="font-medium text-sm truncate block">{item.name}</span>
-                              {item.description && (
-                                <span className="text-xs text-muted-foreground truncate block">{item.description}</span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                              <Building2 className="h-3.5 w-3.5" />
-                              <span>{item.initiative_partners?.length || 0} partner{(item.initiative_partners?.length || 0) !== 1 ? 's' : ''}</span>
-                            </div>
-                            <Badge variant={item.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                              {item.status}
-                            </Badge>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                  <Link to={`/admin/initiatives/${item.id}`}>
-                                    <Pencil className="mr-2 h-4 w-4" />
-                                    Edit & Manage Partners
-                                  </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => setDeleteId(item.id)}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+              {/* Standalone initiatives (have direct partners, no parent category) */}
+              {standaloneInitiatives.length > 0 && (
+                <section>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Layers className="h-4 w-4 text-primary" />
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                      Standalone Initiatives
+                    </h2>
+                    <Badge variant="secondary" className="text-xs">{standaloneInitiatives.length}</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {standaloneInitiatives.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between px-4 py-3 rounded-lg border border-border/60 bg-card hover:border-primary/30 transition-colors group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="min-w-0">
+                            <span className="font-medium text-sm truncate block">{item.name}</span>
+                            {item.description && (
+                              <span className="text-xs text-muted-foreground truncate block">{item.description}</span>
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </section>
-                );
-              })()}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Building2 className="h-3.5 w-3.5" />
+                            <span>{item.initiative_partners?.length || 0} partner{(item.initiative_partners?.length || 0) !== 1 ? 's' : ''}</span>
+                          </div>
+                          <Badge variant={item.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                            {item.status}
+                          </Badge>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link to={`/admin/initiatives/${item.id}`}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  Edit & Manage Partners
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => setDeleteId(item.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </>
           )}
         </div>
