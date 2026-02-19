@@ -75,7 +75,7 @@ const InitiativesManagement = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Initiatives</h1>
           <p className="text-muted-foreground mt-1">
-            Manage main categories and their sub-initiatives
+            Manage main categories and their initiatives
           </p>
         </div>
         <div className="flex gap-3">
@@ -88,7 +88,7 @@ const InitiativesManagement = () => {
           <Button asChild>
             <Link to="/admin/initiatives/new">
               <Plus className="mr-2 h-4 w-4" />
-              Add Sub-Initiative
+              Add Initiative
             </Link>
           </Button>
         </div>
@@ -116,14 +116,22 @@ const InitiativesManagement = () => {
               <Layers className="h-12 w-12 text-muted-foreground mb-3" />
               <p className="text-lg font-medium text-muted-foreground">No initiatives yet</p>
               <p className="text-sm text-muted-foreground mt-1 mb-4">
-                Start by creating a Main Category (e.g., KYC, Voice Bots)
+                Start by creating a Main Category (e.g., KYC, Voice Bots) or a standalone Initiative
               </p>
-              <Button asChild>
-                <Link to="/admin/categories/new">
-                  <FolderOpen className="mr-2 h-4 w-4" />
-                  Add Main Category
-                </Link>
-              </Button>
+              <div className="flex gap-3">
+                <Button asChild variant="outline">
+                  <Link to="/admin/categories/new">
+                    <FolderOpen className="mr-2 h-4 w-4" />
+                    Add Main Category
+                  </Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/admin/initiatives/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Initiative
+                  </Link>
+                </Button>
+              </div>
             </div>
           ) : (
             <>
@@ -174,7 +182,7 @@ const InitiativesManagement = () => {
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
                                 <span className="text-xs text-muted-foreground">
-                                  {subs.length} sub-initiative{subs.length !== 1 ? 's' : ''}
+                                  {subs.length} initiative{subs.length !== 1 ? 's' : ''}
                                 </span>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -267,12 +275,12 @@ const InitiativesManagement = () => {
                             </CardContent>
                           )}
 
-                          {/* Empty state for category with no subs */}
+                          {/* Empty state for category with no initiatives */}
                           {subs.length === 0 && (
                             <CardContent className="pt-0 pb-4 px-5">
                               <div className="border-t border-border/50 pt-3">
                                 <div className="pl-6 flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span>No sub-initiatives yet.</span>
+                                  <span>No initiatives yet.</span>
                                   <Link
                                     to="/admin/initiatives/new"
                                     className="text-primary hover:underline font-medium"
@@ -290,39 +298,41 @@ const InitiativesManagement = () => {
                 </section>
               )}
 
-              {/* Unassigned sub-initiatives (have parent but parent not found in results) */}
+              {/* Standalone initiatives (no parent category) */}
               {(() => {
-                const unassigned = subInitiatives.filter(
-                  (s) => !mainCategories.find((c) => c.id === (s as any).parent_id)
-                );
-                if (unassigned.length === 0) return null;
+                const standalone = allInitiatives?.filter((i) => !i.parent_id && !mainCategories.find(c => c.id === i.id)) ?? [];
+                if (standalone.length === 0) return null;
                 return (
                   <section>
                     <div className="flex items-center gap-2 mb-3">
-                      <Layers className="h-4 w-4 text-warning" />
+                      <Layers className="h-4 w-4 text-primary" />
                       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                        Sub-Initiatives (uncategorized / search results)
+                        Standalone Initiatives
                       </h2>
-                      <Badge variant="secondary" className="text-xs">{unassigned.length}</Badge>
+                      <Badge variant="secondary" className="text-xs">{standalone.length}</Badge>
                     </div>
                     <div className="space-y-2">
-                      {unassigned.map((sub) => (
+                      {standalone.map((item) => (
                         <div
-                          key={sub.id}
+                          key={item.id}
                           className="flex items-center justify-between px-4 py-3 rounded-lg border border-border/60 bg-card hover:border-primary/30 transition-colors group"
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
                             <div className="min-w-0">
-                              <span className="font-medium text-sm truncate block">{sub.name}</span>
-                              {sub.description && (
-                                <span className="text-xs text-muted-foreground truncate block">{sub.description}</span>
+                              <span className="font-medium text-sm truncate block">{item.name}</span>
+                              {item.description && (
+                                <span className="text-xs text-muted-foreground truncate block">{item.description}</span>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <Badge variant={sub.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                              {sub.status}
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                              <Building2 className="h-3.5 w-3.5" />
+                              <span>{item.initiative_partners?.length || 0} partner{(item.initiative_partners?.length || 0) !== 1 ? 's' : ''}</span>
+                            </div>
+                            <Badge variant={item.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                              {item.status}
                             </Badge>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -332,14 +342,14 @@ const InitiativesManagement = () => {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem asChild>
-                                  <Link to={`/admin/initiatives/${sub.id}`}>
+                                  <Link to={`/admin/initiatives/${item.id}`}>
                                     <Pencil className="mr-2 h-4 w-4" />
                                     Edit & Manage Partners
                                   </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-destructive"
-                                  onClick={() => setDeleteId(sub.id)}
+                                  onClick={() => setDeleteId(item.id)}
                                 >
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   Delete

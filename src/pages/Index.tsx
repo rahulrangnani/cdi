@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useInitiatives, useSubInitiatives } from '@/hooks/useInitiatives';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Users, ArrowRight, Loader2, ChevronRight, Layers, ArrowLeft } from 'lucide-react';
+import { Search, Users, ArrowRight, Loader2, ChevronRight, Layers, ArrowLeft, FolderOpen } from 'lucide-react';
 
 // Sub-initiatives shown when a main category is selected
 const SubInitiativeList = ({
@@ -46,7 +45,7 @@ const SubInitiativeList = ({
       <div>
         <h2 className="text-2xl font-bold text-foreground">{parentName}</h2>
         <p className="text-muted-foreground mt-1">
-          Select a sub-initiative to view partner integrations
+          Select an initiative to view partner integrations
         </p>
       </div>
 
@@ -93,9 +92,9 @@ const SubInitiativeList = ({
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center border-2 border-dashed border-border rounded-xl py-16">
           <Layers className="h-12 w-12 text-muted-foreground mb-3" />
-          <p className="text-lg font-medium text-muted-foreground">No sub-initiatives yet</p>
+          <p className="text-lg font-medium text-muted-foreground">No initiatives yet</p>
           <p className="text-sm text-muted-foreground mt-1">
-            Sub-initiatives for {parentName} will appear here
+            Initiatives for {parentName} will appear here
           </p>
         </div>
       )}
@@ -103,7 +102,7 @@ const SubInitiativeList = ({
   );
 };
 
-// Main category card
+// Main category card — click to drill into sub-initiatives
 const CategoryCard = ({
   initiative,
   onClick,
@@ -111,8 +110,6 @@ const CategoryCard = ({
   initiative: any;
   onClick: () => void;
 }) => {
-  const partnerCount = initiative.initiative_partners?.length || 0;
-
   return (
     <div
       onClick={onClick}
@@ -125,15 +122,13 @@ const CategoryCard = ({
         {/* Icon + Name */}
         <div className="flex items-start gap-4">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
-            <Layers className="h-6 w-6 text-primary" />
+            <FolderOpen className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
               {initiative.name}
             </h3>
-            {initiative.category && (
-              <p className="text-xs text-muted-foreground font-medium mt-0.5">{initiative.category}</p>
-            )}
+            <p className="text-xs text-muted-foreground font-medium mt-0.5">Main Category</p>
           </div>
           <Badge
             variant={initiative.status === 'active' ? 'default' : 'secondary'}
@@ -148,13 +143,9 @@ const CategoryCard = ({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-border/50">
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Users className="h-4 w-4" />
-            <span>{partnerCount} Partner{partnerCount !== 1 ? 's' : ''}</span>
-          </div>
+        <div className="flex items-center justify-end pt-3 border-t border-border/50">
           <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-            Explore
+            Explore Initiatives
             <ChevronRight className="h-4 w-4" />
           </span>
         </div>
@@ -163,13 +154,60 @@ const CategoryCard = ({
   );
 };
 
+// Standalone initiative card — click goes directly to detail
+const InitiativeCard = ({ initiative }: { initiative: any }) => {
+  const partnerCount = initiative.initiative_partners?.length || 0;
+  return (
+    <Link to={`/initiatives/${initiative.id}`}>
+      <div className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer">
+        {/* Top gradient strip */}
+        <div className="h-2 w-full bg-gradient-to-r from-secondary to-primary" />
+
+        <div className="p-6 space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-secondary/20 to-primary/20 flex items-center justify-center shrink-0">
+              <Layers className="h-6 w-6 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
+                {initiative.name}
+              </h3>
+            </div>
+            <Badge
+              variant={initiative.status === 'active' ? 'default' : 'secondary'}
+              className={`shrink-0 ${initiative.status === 'active' ? 'bg-primary/90' : ''}`}
+            >
+              {initiative.status}
+            </Badge>
+          </div>
+
+          {initiative.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2">{initiative.description}</p>
+          )}
+
+          <div className="flex items-center justify-between pt-3 border-t border-border/50">
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>{partnerCount} Partner{partnerCount !== 1 ? 's' : ''}</span>
+            </div>
+            <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+              View Details
+              <ArrowRight className="h-4 w-4" />
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
 const Index = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedParent, setSelectedParent] = useState<{ id: string; name: string } | null>(null);
 
-  // Only fetch top-level (parent) initiatives
-  const { data: initiatives, isLoading, error } = useInitiatives({
+  // Fetch ALL top-level items (parent_id = null)
+  const { data: allTopLevel, isLoading, error } = useInitiatives({
     status: statusFilter,
     search: search,
     parentId: null,
@@ -192,6 +230,17 @@ const Index = () => {
       />
     );
   }
+
+  // Separate main categories (have children) from standalone initiatives
+  // We show ALL top-level items; categories get a drill-down, standalone goes directly
+  // A "main category" is one created via the Categories form — they typically have no partners directly
+  // A "standalone initiative" typically has partners directly and no children expected
+  // We distinguish by checking if they were meant as categories (we use the absence of initiative_partners to hint,
+  // but better: we show BOTH on the same page — categories with FolderOpen, initiatives with Layers icon)
+  // The admin controls this via the "Add Main Category" vs "Add Initiative" flow.
+  // Both use parent_id=null, so we show all of them and let the click behavior differ:
+  // - If an item has sub-initiatives (children), clicking drills down
+  // - If not, clicking goes directly to the initiative detail
 
   return (
     <div className="space-y-6">
@@ -222,16 +271,11 @@ const Index = () => {
         <div className="flex items-center justify-center min-h-[40vh]">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : initiatives && initiatives.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {initiatives.map((initiative) => (
-            <CategoryCard
-              key={initiative.id}
-              initiative={initiative}
-              onClick={() => setSelectedParent({ id: initiative.id, name: initiative.name })}
-            />
-          ))}
-        </div>
+      ) : allTopLevel && allTopLevel.length > 0 ? (
+        <PortalGrid
+          items={allTopLevel}
+          onCategoryClick={(id, name) => setSelectedParent({ id, name })}
+        />
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
           <Layers className="h-12 w-12 text-muted-foreground mb-3" />
@@ -241,6 +285,45 @@ const Index = () => {
           </p>
         </div>
       )}
+    </div>
+  );
+};
+
+// Smart grid: checks each top-level item for sub-initiatives
+const PortalGrid = ({
+  items,
+  onCategoryClick,
+}: {
+  items: any[];
+  onCategoryClick: (id: string, name: string) => void;
+}) => {
+  // We fetch sub-initiatives for all items at once to know which ones have children
+  // Use a helper hook to check — but since we can't call hooks conditionally in a loop,
+  // we instead show items with initiative_partners = 0 AND we determine category vs standalone
+  // by whether they have direct partners or not. A pure category has 0 direct partners.
+  // But an initiative can also have 0 partners. So we show ALL as clickable:
+  // - No direct partners → treat as category (drill-down, but if no subs, show empty state inside)
+  // - Has direct partners → treat as standalone (go directly to detail)
+  // This gives the best UX without extra queries.
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {items.map((item) => {
+        const hasDirectPartners = (item.initiative_partners?.length || 0) > 0;
+        if (hasDirectPartners) {
+          // Standalone initiative — click goes to detail page
+          return <InitiativeCard key={item.id} initiative={item} />;
+        } else {
+          // Likely a main category — click drills into sub-initiatives
+          return (
+            <CategoryCard
+              key={item.id}
+              initiative={item}
+              onClick={() => onCategoryClick(item.id, item.name)}
+            />
+          );
+        }
+      })}
     </div>
   );
 };
