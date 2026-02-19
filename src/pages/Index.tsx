@@ -50,14 +50,14 @@ const SubInitiativeList = ({
       </div>
 
       {subs && subs.length > 0 ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 items-stretch">
           {subs.map((sub) => (
-            <Link key={sub.id} to={`/initiatives/${sub.id}`}>
-              <div className="group relative bg-card border border-border/60 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer h-full">
+            <Link key={sub.id} to={`/initiatives/${sub.id}`} className="flex">
+              <div className="group relative bg-card border border-border/60 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col w-full">
                 {/* Colored left accent bar */}
                 <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-primary opacity-60 group-hover:opacity-100 transition-opacity" />
 
-                <div className="pl-3 space-y-3">
+                <div className="pl-3 flex flex-col flex-1 gap-3">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-base text-foreground group-hover:text-primary transition-colors leading-tight">
                       {sub.name}
@@ -70,11 +70,13 @@ const SubInitiativeList = ({
                     </Badge>
                   </div>
 
-                  {sub.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{sub.description}</p>
-                  )}
+                  <div className="flex-1">
+                    {sub.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">{sub.description}</p>
+                    )}
+                  </div>
 
-                  <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center justify-between pt-2 mt-auto border-t border-border/40">
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Users className="h-3.5 w-3.5" />
                       <span>{sub.initiative_partners?.length || 0} Partner{(sub.initiative_partners?.length || 0) !== 1 ? 's' : ''}</span>
@@ -113,12 +115,12 @@ const CategoryCard = ({
   return (
     <div
       onClick={onClick}
-      className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer"
+      className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
     >
       {/* Top gradient strip */}
-      <div className="h-2 w-full bg-gradient-to-r from-primary to-secondary" />
+      <div className="h-2 w-full bg-gradient-to-r from-primary to-secondary shrink-0" />
 
-      <div className="p-6 space-y-4">
+      <div className="p-6 flex flex-col flex-1 gap-4">
         {/* Icon + Name */}
         <div className="flex items-start gap-4">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
@@ -138,12 +140,14 @@ const CategoryCard = ({
           </Badge>
         </div>
 
-        {initiative.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">{initiative.description}</p>
-        )}
+        <div className="flex-1">
+          {initiative.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2">{initiative.description}</p>
+          )}
+        </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end pt-3 border-t border-border/50">
+        <div className="flex items-center justify-end pt-3 border-t border-border/50 mt-auto">
           <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
             Explore Initiatives
             <ChevronRight className="h-4 w-4" />
@@ -158,12 +162,12 @@ const CategoryCard = ({
 const InitiativeCard = ({ initiative }: { initiative: any }) => {
   const partnerCount = initiative.initiative_partners?.length || 0;
   return (
-    <Link to={`/initiatives/${initiative.id}`}>
-      <div className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer">
+    <Link to={`/initiatives/${initiative.id}`} className="flex">
+      <div className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col w-full">
         {/* Top gradient strip */}
-        <div className="h-2 w-full bg-gradient-to-r from-secondary to-primary" />
+        <div className="h-2 w-full bg-gradient-to-r from-secondary to-primary shrink-0" />
 
-        <div className="p-6 space-y-4">
+        <div className="p-6 flex flex-col flex-1 gap-4">
           <div className="flex items-start gap-4">
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-secondary/20 to-primary/20 flex items-center justify-center shrink-0">
               <Layers className="h-6 w-6 text-primary" />
@@ -181,11 +185,13 @@ const InitiativeCard = ({ initiative }: { initiative: any }) => {
             </Badge>
           </div>
 
-          {initiative.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">{initiative.description}</p>
-          )}
+          <div className="flex-1">
+            {initiative.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2">{initiative.description}</p>
+            )}
+          </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-border/50">
+          <div className="flex items-center justify-between pt-3 border-t border-border/50 mt-auto">
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <Users className="h-4 w-4" />
               <span>{partnerCount} Partner{partnerCount !== 1 ? 's' : ''}</span>
@@ -307,7 +313,7 @@ const PortalGrid = ({
   // This gives the best UX without extra queries.
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
       {items.map((item) => {
         const hasDirectPartners = (item.initiative_partners?.length || 0) > 0;
         if (hasDirectPartners) {

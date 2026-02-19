@@ -402,10 +402,26 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
             <TabsContent value="media" className="mt-0">
               {ip.media_url ? (
                 <div className="space-y-3">
+                  {ip.media_title && <p className="text-sm font-semibold">{ip.media_title}</p>}
                   {ip.media_description && <p className="text-sm text-muted-foreground">{ip.media_description}</p>}
-                  <div className={ip.media_type === 'video' || !ip.media_type ? 'aspect-video rounded-lg overflow-hidden bg-muted' : ''}>
-                    <SecureMediaPlayer mediaUrl={ip.media_url} mediaTitle={ip.media_title || 'Media'} mediaType={ip.media_type || 'video'} />
-                  </div>
+                  {isStoragePath(ip.media_url) ? (
+                    // Uploaded file — show the media player
+                    <div className={ip.media_type === 'video' || !ip.media_type ? 'aspect-video rounded-lg overflow-hidden bg-muted' : ''}>
+                      <SecureMediaPlayer mediaUrl={ip.media_url} mediaTitle={ip.media_title || 'Media'} mediaType={ip.media_type || 'video'} />
+                    </div>
+                  ) : (
+                    // External link — show as a clickable link only
+                    <a
+                      href={ip.media_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors text-sm font-medium text-primary group"
+                    >
+                      <Film className="h-4 w-4 shrink-0" />
+                      <span className="truncate max-w-xs">{ip.media_url}</span>
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </a>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">No media available.</p>
