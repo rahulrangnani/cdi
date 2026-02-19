@@ -4,11 +4,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
-import { useInitiative, useCreateInitiative, useUpdateInitiative } from '@/hooks/useInitiatives';
+import { useInitiative, useCreateInitiative, useUpdateInitiative, useParentInitiatives } from '@/hooks/useInitiatives';
 import { useInitiativePartners, useCreateInitiativePartner, useUpdateInitiativePartner, useDeleteInitiativePartner } from '@/hooks/useInitiativePartners';
 import { useSyncInitiativePartnerProducts } from '@/hooks/useInitiativePartnerProducts';
 import { usePartners, useUpdatePartner } from '@/hooks/usePartners';
 import { useProducts } from '@/hooks/useProducts';
+import { useUpsertPartnerFeatures } from '@/hooks/usePartnerFeatures';
+import { useCreateApiDocument, useApiDocuments, useDeleteApiDocument } from '@/hooks/useApiDocuments';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -44,15 +46,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Loader2, Plus, Trash2, Building2, DollarSign, FileCode, FileText, Package, Image, Link2, Upload, Music, Film } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Trash2, Building2, DollarSign, FileCode, FileText, Package, Image, Link2, Upload, Music, Film, CheckSquare, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 
 const initiativeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
+  parent_id: z.string().optional(),
 });
 
 type InitiativeFormValues = z.infer<typeof initiativeSchema>;
@@ -70,6 +74,7 @@ const partnerDetailsSchema = z.object({
   terms_and_conditions: z.string().optional(),
   api_version: z.string().optional(),
   api_documentation: z.string().optional(),
+  api_notes: z.string().optional(),
   media_source_type: z.enum(['link', 'upload']).optional(),
   media_type: z.enum(['video', 'audio', 'document']).optional(),
   media_title: z.string().optional(),
@@ -78,6 +83,17 @@ const partnerDetailsSchema = z.object({
 });
 
 type PartnerFormValues = z.infer<typeof partnerDetailsSchema>;
+
+interface FeatureRow {
+  feature_name: string;
+  is_available: boolean;
+  notes: string;
+}
+
+interface PdfUpload {
+  title: string;
+  file: File;
+}
 
 const InitiativeForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -94,12 +110,25 @@ const InitiativeForm = () => {
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Features state
+  const [features, setFeatures] = useState<FeatureRow[]>([]);
+  const [newFeatureName, setNewFeatureName] = useState('');
+
+  // PDF state
+  const [pdfUploads, setPdfUploads] = useState<PdfUpload[]>([]);
+  const [newPdfTitle, setNewPdfTitle] = useState('');
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+
   const { data: initiative, isLoading: isLoadingInitiative } = useInitiative(id!);
   const { data: initiativePartners, isLoading: isLoadingPartners } = useInitiativePartners(id!);
   const { data: partners } = usePartners();
+  const { data: parentInitiatives } = useParentInitiatives();
   const updatePartner = useUpdatePartner();
   const { data: products } = useProducts();
-  
+  const upsertFeatures = useUpsertPartnerFeatures();
+  const createApiDocument = useCreateApiDocument();
+  const deleteApiDocument = useDeleteApiDocument();
+
   const createInitiative = useCreateInitiative();
   const updateInitiative = useUpdateInitiative();
   const createInitiativePartner = useCreateInitiativePartner();
@@ -109,10 +138,7 @@ const InitiativeForm = () => {
 
   const form = useForm<InitiativeFormValues>({
     resolver: zodResolver(initiativeSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-    },
+    defaultValues: { name: '', description: '', parent_id: '' },
   });
 
   const partnerForm = useForm<PartnerFormValues>({
@@ -130,6 +156,7 @@ const InitiativeForm = () => {
       terms_and_conditions: '',
       api_version: '1.0',
       api_documentation: '',
+      api_notes: '',
       media_source_type: 'link',
       media_type: 'video',
       media_title: '',
@@ -143,6 +170,7 @@ const InitiativeForm = () => {
       form.reset({
         name: initiative.name,
         description: initiative.description || '',
+        parent_id: (initiative as any).parent_id || '',
       });
     }
   }, [initiative, form]);
@@ -156,8 +184,9 @@ const InitiativeForm = () => {
         status: 'active',
         category: null,
         logo_url: null,
-      };
-      
+        parent_id: data.parent_id || null,
+      } as any;
+
       if (isEditing) {
         await updateInitiative.mutateAsync({ id, ...payload });
         toast({ title: 'Initiative updated successfully' });
@@ -191,6 +220,7 @@ const InitiativeForm = () => {
       terms_and_conditions: '',
       api_version: '1.0',
       api_documentation: '',
+      api_notes: '',
       media_source_type: 'link',
       media_type: 'video',
       media_title: '',
@@ -201,6 +231,10 @@ const InitiativeForm = () => {
     setMediaSourceType('link');
     setMediaType('video');
     setMediaFile(null);
+    setFeatures([]);
+    setPdfUploads([]);
+    setNewFeatureName('');
+    setNewPdfTitle('');
   };
 
   const openAddPartner = () => {
@@ -210,11 +244,10 @@ const InitiativeForm = () => {
   };
 
   const openEditPartner = (initiativePartner: any) => {
-    // Detect if existing media is an uploaded file (path) or external link
-    const isUploadedFile = initiativePartner.media_url && 
-      (initiativePartner.media_url.startsWith('videos/') || 
-       initiativePartner.media_url.startsWith('audios/') || 
-       initiativePartner.media_url.startsWith('documents/'));
+    const isUploadedFile = initiativePartner.media_url &&
+      (initiativePartner.media_url.startsWith('videos/') ||
+        initiativePartner.media_url.startsWith('audios/') ||
+        initiativePartner.media_url.startsWith('documents/'));
     const sourceType = isUploadedFile ? 'upload' : 'link';
     partnerForm.reset({
       partner_id: initiativePartner.partner_id,
@@ -229,6 +262,7 @@ const InitiativeForm = () => {
       terms_and_conditions: initiativePartner.terms_and_conditions || '',
       api_version: initiativePartner.api_version || '1.0',
       api_documentation: initiativePartner.api_documentation || '',
+      api_notes: (initiativePartner as any).api_notes || '',
       media_source_type: sourceType,
       media_type: initiativePartner.media_type || 'video',
       media_title: initiativePartner.media_title || '',
@@ -238,60 +272,32 @@ const InitiativeForm = () => {
     setSelectedProducts(initiativePartner.initiative_partner_products?.map((p: any) => p.product_id) || []);
     setMediaSourceType(sourceType);
     setMediaType(initiativePartner.media_type || 'video');
+    // Load existing features
+    const existingFeatures: FeatureRow[] = (initiativePartner.partner_features || []).map((f: any) => ({
+      feature_name: f.feature_name,
+      is_available: f.is_available,
+      notes: f.notes || '',
+    }));
+    setFeatures(existingFeatures);
+    setPdfUploads([]);
     setEditingPartnerId(initiativePartner.id);
     setShowAddPartner(true);
   };
 
-  // Media file validation helper
   const validateMediaFile = (file: File, type: 'video' | 'audio' | 'document'): { valid: boolean; error?: string } => {
-    const maxSize = 100 * 1024 * 1024; // 100MB max
-    if (file.size > maxSize) {
-      return { valid: false, error: 'File too large. Maximum size is 100MB.' };
-    }
-
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) return { valid: false, error: 'File too large. Maximum size is 100MB.' };
     const ext = file.name.split('.').pop()?.toLowerCase();
-    
     if (type === 'video') {
-      const validExtensions = ['mp4', 'webm', 'mov'];
-      const validMimeTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
-      if (!ext || !validExtensions.includes(ext)) {
-        return { valid: false, error: 'Invalid file extension. Allowed: mp4, webm, mov' };
-      }
-      if (!validMimeTypes.includes(file.type)) {
-        return { valid: false, error: 'Invalid file type. Only video files are allowed.' };
-      }
+      if (!['mp4', 'webm', 'mov'].includes(ext || '')) return { valid: false, error: 'Allowed: mp4, webm, mov' };
     } else if (type === 'audio') {
-      const validExtensions = ['mp3', 'wav', 'ogg', 'm4a'];
-      const validMimeTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/x-m4a'];
-      if (!ext || !validExtensions.includes(ext)) {
-        return { valid: false, error: 'Invalid file extension. Allowed: mp3, wav, ogg, m4a' };
-      }
-      if (!validMimeTypes.includes(file.type)) {
-        return { valid: false, error: 'Invalid file type. Only audio files are allowed.' };
-      }
+      if (!['mp3', 'wav', 'ogg', 'm4a'].includes(ext || '')) return { valid: false, error: 'Allowed: mp3, wav, ogg, m4a' };
     } else if (type === 'document') {
-      const validExtensions = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'];
-      const validMimeTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      ];
-      if (!ext || !validExtensions.includes(ext)) {
-        return { valid: false, error: 'Invalid file extension. Allowed: pdf, doc, docx, ppt, pptx, xls, xlsx' };
-      }
-      if (!validMimeTypes.includes(file.type)) {
-        return { valid: false, error: 'Invalid file type. Only document files are allowed.' };
-      }
+      if (!['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'].includes(ext || '')) return { valid: false, error: 'Allowed: pdf, doc, docx, ppt, pptx' };
     }
-    
     return { valid: true };
   };
 
-  // Get allowed file extensions based on media type
   const getAcceptedFileTypes = (type: 'video' | 'audio' | 'document'): string => {
     switch (type) {
       case 'video': return 'video/mp4,video/webm,video/quicktime';
@@ -300,7 +306,6 @@ const InitiativeForm = () => {
     }
   };
 
-  // Get file extension description
   const getFileTypeDescription = (type: 'video' | 'audio' | 'document'): string => {
     switch (type) {
       case 'video': return 'Supports MP4, WebM, MOV (max 100MB)';
@@ -309,61 +314,62 @@ const InitiativeForm = () => {
     }
   };
 
-  // Sanitize file extension for upload
   const sanitizeExtension = (filename: string, type: 'video' | 'audio' | 'document'): string => {
     const ext = filename.split('.').pop()?.toLowerCase();
     const allowedExts: Record<string, string[]> = {
       video: ['mp4', 'webm', 'mov'],
       audio: ['mp3', 'wav', 'ogg', 'm4a'],
-      document: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx']
+      document: ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'],
     };
     return allowedExts[type].includes(ext || '') ? ext! : allowedExts[type][0];
+  };
+
+  const addFeature = () => {
+    const name = newFeatureName.trim();
+    if (!name) return;
+    if (features.some(f => f.feature_name.toLowerCase() === name.toLowerCase())) {
+      toast({ variant: 'destructive', title: 'Feature already exists' });
+      return;
+    }
+    setFeatures(prev => [...prev, { feature_name: name, is_available: true, notes: '' }]);
+    setNewFeatureName('');
+  };
+
+  const removeFeature = (index: number) => {
+    setFeatures(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const addPdfToQueue = (file: File) => {
+    const title = newPdfTitle.trim() || file.name.replace(/\.pdf$/i, '');
+    setPdfUploads(prev => [...prev, { title, file }]);
+    setNewPdfTitle('');
+    if (pdfInputRef.current) pdfInputRef.current.value = '';
   };
 
   const onPartnerSubmit = async (data: PartnerFormValues) => {
     if (!id) return;
 
     try {
-      // Update partner logo if provided
       if (data.partner_logo_url && data.partner_id) {
-        await updatePartner.mutateAsync({
-          id: data.partner_id,
-          logo_url: data.partner_logo_url,
-        });
+        await updatePartner.mutateAsync({ id: data.partner_id, logo_url: data.partner_logo_url });
       }
 
-      // Handle media file upload if a file was selected
       let mediaUrl = data.media_url || null;
       if (mediaSourceType === 'upload' && mediaFile) {
-        // Validate the media file before upload
         const validation = validateMediaFile(mediaFile, mediaType);
         if (!validation.valid) {
-          toast({
-            variant: 'destructive',
-            title: 'Invalid media file',
-            description: validation.error,
-          });
+          toast({ variant: 'destructive', title: 'Invalid media file', description: validation.error });
           return;
         }
-
         setIsUploadingMedia(true);
         try {
-          // Use sanitized extension and random UUID for filename to prevent enumeration
           const fileExt = sanitizeExtension(mediaFile.name, mediaType);
           const fileName = `${crypto.randomUUID()}.${fileExt}`;
           const filePath = `${mediaType}s/${fileName}`;
-
           const { error: uploadError } = await supabase.storage
             .from('partner-videos')
-            .upload(filePath, mediaFile, {
-              cacheControl: '3600',
-              upsert: false, // Prevent overwriting existing files
-            });
-
+            .upload(filePath, mediaFile, { cacheControl: '3600', upsert: false });
           if (uploadError) throw uploadError;
-
-          // Store the file path (not public URL) since bucket is now private
-          // The frontend will use signed URLs to access the media
           mediaUrl = filePath;
         } finally {
           setIsUploadingMedia(false);
@@ -382,11 +388,12 @@ const InitiativeForm = () => {
         terms_and_conditions: data.terms_and_conditions || null,
         api_version: data.api_version || null,
         api_documentation: data.api_documentation || null,
+        api_notes: data.api_notes || null,
         media_type: mediaType,
         media_title: data.media_title || null,
         media_url: mediaUrl,
         media_description: data.media_description || null,
-      };
+      } as any;
 
       let initiativePartnerId = editingPartnerId;
 
@@ -397,14 +404,34 @@ const InitiativeForm = () => {
         initiativePartnerId = result.id;
       }
 
-      // Sync product associations
-      if (initiativePartnerId && selectedProducts.length >= 0) {
-        await syncProducts.mutateAsync({
-          initiativePartnerId,
-          productIds: selectedProducts,
-        });
+      if (initiativePartnerId) {
+        // Sync products
+        if (selectedProducts.length >= 0) {
+          await syncProducts.mutateAsync({ initiativePartnerId, productIds: selectedProducts });
+        }
+
+        // Sync features
+        await upsertFeatures.mutateAsync({ initiativePartnerId, features });
+
+        // Upload PDFs
+        for (const pdf of pdfUploads) {
+          const ext = pdf.file.name.split('.').pop()?.toLowerCase() || 'pdf';
+          const fileName = `${crypto.randomUUID()}.${ext}`;
+          const filePath = `pdfs/${fileName}`;
+          const { error: pdfError } = await supabase.storage
+            .from('api-documents')
+            .upload(filePath, pdf.file, { cacheControl: '3600', upsert: false });
+          if (!pdfError) {
+            await createApiDocument.mutateAsync({
+              initiative_partner_id: initiativePartnerId,
+              title: pdf.title,
+              file_path: filePath,
+              file_name: pdf.file.name,
+            });
+          }
+        }
       }
-      
+
       toast({ title: editingPartnerId ? 'Partner updated successfully' : 'Partner added successfully' });
       setShowAddPartner(false);
       resetPartnerForm();
@@ -425,11 +452,7 @@ const InitiativeForm = () => {
       await deleteInitiativePartner.mutateAsync({ id: initiativePartnerId, initiativeId: id });
       toast({ title: 'Partner removed successfully' });
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to remove partner',
-        description: 'Please try again.',
-      });
+      toast({ variant: 'destructive', title: 'Failed to remove partner', description: 'Please try again.' });
     }
   };
 
@@ -445,9 +468,7 @@ const InitiativeForm = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link to="/admin/initiatives">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+          <Link to="/admin/initiatives"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -484,28 +505,49 @@ const InitiativeForm = () => {
 
               <FormField
                 control={form.control}
+                name="parent_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent Category</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select parent (leave empty for main category)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">— No parent (Main Category) —</SelectItem>
+                        {parentInitiatives
+                          ?.filter(p => p.id !== id) // can't be own parent
+                          .map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Set a parent to make this a sub-initiative (e.g., VKYC under KYC)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Brief description of the initiative..."
-                        className="min-h-[100px]"
-                        {...field}
-                      />
+                      <Textarea placeholder="Brief description of the initiative..." className="min-h-[100px]" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-
               <div className="flex gap-4">
-                <Button
-                  type="submit"
-                  disabled={createInitiative.isPending || updateInitiative.isPending}
-                >
+                <Button type="submit" disabled={createInitiative.isPending || updateInitiative.isPending}>
                   {(createInitiative.isPending || updateInitiative.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
@@ -529,9 +571,7 @@ const InitiativeForm = () => {
                 <Building2 className="h-5 w-5" />
                 Partner Details
               </CardTitle>
-              <CardDescription>
-                Manage partners and their integration details for this initiative
-              </CardDescription>
+              <CardDescription>Manage partners and their integration details</CardDescription>
             </div>
             <Dialog open={showAddPartner} onOpenChange={setShowAddPartner}>
               <DialogTrigger asChild>
@@ -543,9 +583,7 @@ const InitiativeForm = () => {
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{editingPartnerId ? 'Edit Partner Details' : 'Add Partner'}</DialogTitle>
-                  <DialogDescription>
-                    Configure partner details including commercial, technical, and video information
-                  </DialogDescription>
+                  <DialogDescription>Configure commercial, technical, features, and media</DialogDescription>
                 </DialogHeader>
 
                 <Form {...partnerForm}>
@@ -565,9 +603,7 @@ const InitiativeForm = () => {
                             </FormControl>
                             <SelectContent>
                               {partners?.map((partner) => (
-                                <SelectItem key={partner.id} value={partner.id}>
-                                  {partner.name}
-                                </SelectItem>
+                                <SelectItem key={partner.id} value={partner.id}>{partner.name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -589,31 +625,26 @@ const InitiativeForm = () => {
                           <FormControl>
                             <Input placeholder="https://example.com/partner-logo.png" {...field} />
                           </FormControl>
-                          <FormDescription>
-                            URL to the partner's logo image
-                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    {/* Products Multi-Select */}
+                    {/* Products */}
                     <div className="space-y-2">
                       <FormLabel className="flex items-center gap-2">
                         <Package className="h-4 w-4" />
-                        Products (Select applicable products)
+                        Products
                       </FormLabel>
                       <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-muted/30">
                         {products?.map((product) => (
                           <Badge
                             key={product.id}
-                            variant={selectedProducts.includes(product.id) ? "default" : "outline"}
+                            variant={selectedProducts.includes(product.id) ? 'default' : 'outline'}
                             className="cursor-pointer hover:bg-primary/80"
                             onClick={() => {
-                              setSelectedProducts(prev => 
-                                prev.includes(product.id)
-                                  ? prev.filter(p => p !== product.id)
-                                  : [...prev, product.id]
+                              setSelectedProducts(prev =>
+                                prev.includes(product.id) ? prev.filter(p => p !== product.id) : [...prev, product.id]
                               );
                             }}
                           >
@@ -621,9 +652,6 @@ const InitiativeForm = () => {
                           </Badge>
                         ))}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Click to select products where this partner integration is live
-                      </p>
                     </div>
 
                     <Separator />
@@ -635,121 +663,125 @@ const InitiativeForm = () => {
                         Commercial Details
                       </h4>
                       <div className="grid gap-4 md:grid-cols-2">
-                        <FormField
-                          control={partnerForm.control}
-                          name="integration_cost"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Integration Cost (₹)</FormLabel>
-                              <FormControl>
-                                <Input type="number" placeholder="e.g., 50000" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={partnerForm.control}
-                          name="annual_cost"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Annual Cost (₹)</FormLabel>
-                              <FormControl>
-                                <Input type="number" placeholder="e.g., 100000" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={partnerForm.control}
-                          name="pricing_per_call"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Price Per Call (₹)</FormLabel>
-                              <FormControl>
-                                <Input type="number" step="0.01" placeholder="e.g., 2.50" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={partnerForm.control}
-                          name="pricing_unit"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Pricing Unit</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select unit" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="Per Call">Per Call</SelectItem>
-                                  <SelectItem value="Per Transaction">Per Transaction</SelectItem>
-                                  <SelectItem value="Per Month">Per Month</SelectItem>
-                                  <SelectItem value="Per User">Per User</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={partnerForm.control}
-                          name="currency"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Currency</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select currency" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="INR">INR (₹)</SelectItem>
-                                  <SelectItem value="USD">USD ($)</SelectItem>
-                                  <SelectItem value="EUR">EUR (€)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={partnerForm.control}
-                          name="billing_contact"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Billing Contact</FormLabel>
-                              <FormControl>
-                                <Input placeholder="billing@partner.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <FormField
-                        control={partnerForm.control}
-                        name="terms_and_conditions"
-                        render={({ field }) => (
+                        <FormField control={partnerForm.control} name="integration_cost" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Terms & Conditions</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Enter terms and conditions..."
-                                className="min-h-[80px]"
-                                {...field}
-                              />
-                            </FormControl>
+                            <FormLabel>Integration Cost (₹)</FormLabel>
+                            <FormControl><Input type="number" placeholder="e.g., 50000" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
-                        )}
-                      />
+                        )} />
+                        <FormField control={partnerForm.control} name="annual_cost" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Annual Cost (₹)</FormLabel>
+                            <FormControl><Input type="number" placeholder="e.g., 100000" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={partnerForm.control} name="pricing_per_call" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Price Per Call (₹)</FormLabel>
+                            <FormControl><Input type="number" step="0.01" placeholder="e.g., 2.50" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={partnerForm.control} name="pricing_unit" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Pricing Unit</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                <SelectItem value="Per Call">Per Call</SelectItem>
+                                <SelectItem value="Per Transaction">Per Transaction</SelectItem>
+                                <SelectItem value="Per Month">Per Month</SelectItem>
+                                <SelectItem value="Per User">Per User</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={partnerForm.control} name="currency" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Currency</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Select currency" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                <SelectItem value="INR">INR (₹)</SelectItem>
+                                <SelectItem value="USD">USD ($)</SelectItem>
+                                <SelectItem value="EUR">EUR (€)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={partnerForm.control} name="billing_contact" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Billing Contact</FormLabel>
+                            <FormControl><Input placeholder="billing@partner.com" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+                      <FormField control={partnerForm.control} name="terms_and_conditions" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Terms & Conditions</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Enter terms and conditions..." className="min-h-[80px]" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+
+                    <Separator />
+
+                    {/* Features */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <CheckSquare className="h-4 w-4" />
+                        Partner Features
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Add features offered by this partner (e.g., Reverse Geocoding, PAN OCR, Face Match)
+                      </p>
+                      {features.length > 0 && (
+                        <div className="space-y-2 max-h-60 overflow-y-auto">
+                          {features.map((f, i) => (
+                            <div key={i} className="flex items-center gap-3 p-2 bg-muted/40 rounded-lg">
+                              <Switch
+                                checked={f.is_available}
+                                onCheckedChange={(val) => {
+                                  setFeatures(prev => prev.map((ff, ii) => ii === i ? { ...ff, is_available: val } : ff));
+                                }}
+                              />
+                              <span className={`flex-1 text-sm font-medium ${!f.is_available ? 'line-through text-muted-foreground' : ''}`}>
+                                {f.feature_name}
+                              </span>
+                              <Input
+                                placeholder="Notes (optional)"
+                                value={f.notes}
+                                onChange={(e) => setFeatures(prev => prev.map((ff, ii) => ii === i ? { ...ff, notes: e.target.value } : ff))}
+                                className="h-8 text-xs w-40"
+                              />
+                              <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeFeature(i)}>
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Feature name (e.g., PAN OCR)"
+                          value={newFeatureName}
+                          onChange={(e) => setNewFeatureName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addFeature(); } }}
+                          className="flex-1"
+                        />
+                        <Button type="button" variant="outline" onClick={addFeature}>
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      </div>
                     </div>
 
                     <Separator />
@@ -758,35 +790,89 @@ const InitiativeForm = () => {
                     <div className="space-y-4">
                       <h4 className="font-medium flex items-center gap-2">
                         <FileCode className="h-4 w-4" />
-                        Technical Details
+                        Technical / API Details
                       </h4>
                       <div className="grid gap-4 md:grid-cols-2">
-                        <FormField
-                          control={partnerForm.control}
-                          name="api_version"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>API Version</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., 2.1" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={partnerForm.control}
-                          name="api_documentation"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>API Documentation URL</FormLabel>
-                              <FormControl>
-                                <Input placeholder="https://docs.partner.com/api" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <FormField control={partnerForm.control} name="api_version" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>API Version</FormLabel>
+                            <FormControl><Input placeholder="e.g., 2.1" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={partnerForm.control} name="api_documentation" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>API Documentation URL</FormLabel>
+                            <FormControl><Input placeholder="https://docs.partner.com/api" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+
+                      {/* API Notes */}
+                      <FormField control={partnerForm.control} name="api_notes" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>API Notes / Additional Details</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Any additional API details, notes, authentication steps, environment configs, sandbox credentials, etc."
+                              className="min-h-[100px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      {/* PDF Uploads */}
+                      <div className="space-y-3">
+                        <FormLabel className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          API Documentation PDFs
+                        </FormLabel>
+                        <p className="text-xs text-muted-foreground">Upload one or more PDF files (API guides, Postman collections, integration docs)</p>
+
+                        {/* Existing PDFs shown after edit open */}
+                        {editingPartnerId && <ExistingApiDocs partnerId={editingPartnerId} />}
+
+                        {/* New PDFs queued */}
+                        {pdfUploads.length > 0 && (
+                          <div className="space-y-1">
+                            {pdfUploads.map((p, i) => (
+                              <div key={i} className="flex items-center gap-2 text-sm bg-muted/40 rounded px-3 py-1.5">
+                                <FileText className="h-3.5 w-3.5 text-primary" />
+                                <span className="flex-1 font-medium">{p.title}</span>
+                                <span className="text-muted-foreground text-xs">{p.file.name}</span>
+                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setPdfUploads(prev => prev.filter((_, ii) => ii !== i))}>
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Document title (optional)"
+                            value={newPdfTitle}
+                            onChange={(e) => setNewPdfTitle(e.target.value)}
+                            className="flex-1"
+                          />
+                          <input
+                            type="file"
+                            ref={pdfInputRef}
+                            accept="application/pdf,.doc,.docx"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) addPdfToQueue(file);
+                            }}
+                          />
+                          <Button type="button" variant="outline" onClick={() => pdfInputRef.current?.click()}>
+                            <Upload className="h-4 w-4 mr-1" />
+                            Choose File
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
@@ -798,46 +884,27 @@ const InitiativeForm = () => {
                         <FileText className="h-4 w-4" />
                         Media
                       </h4>
-                      
-                      {/* Media Type Selection */}
                       <div className="space-y-2">
                         <FormLabel>Media Type</FormLabel>
                         <RadioGroup
                           value={mediaType}
-                          onValueChange={(value: 'video' | 'audio' | 'document') => {
-                            setMediaType(value);
-                            setMediaFile(null);
-                            if (fileInputRef.current) {
-                              fileInputRef.current.value = '';
-                            }
-                          }}
+                          onValueChange={(value: 'video' | 'audio' | 'document') => { setMediaType(value); setMediaFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                           className="flex gap-4"
                         >
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="video" id="media-video" />
-                            <label htmlFor="media-video" className="flex items-center gap-1 cursor-pointer text-sm">
-                              <Film className="h-4 w-4" />
-                              Video
-                            </label>
+                            <label htmlFor="media-video" className="flex items-center gap-1 cursor-pointer text-sm"><Film className="h-4 w-4" />Video</label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="audio" id="media-audio" />
-                            <label htmlFor="media-audio" className="flex items-center gap-1 cursor-pointer text-sm">
-                              <Music className="h-4 w-4" />
-                              Audio
-                            </label>
+                            <label htmlFor="media-audio" className="flex items-center gap-1 cursor-pointer text-sm"><Music className="h-4 w-4" />Audio</label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="document" id="media-document" />
-                            <label htmlFor="media-document" className="flex items-center gap-1 cursor-pointer text-sm">
-                              <FileText className="h-4 w-4" />
-                              Document
-                            </label>
+                            <label htmlFor="media-document" className="flex items-center gap-1 cursor-pointer text-sm"><FileText className="h-4 w-4" />Document</label>
                           </div>
                         </RadioGroup>
                       </div>
-                      
-                      {/* Media Source Type Toggle */}
                       <div className="space-y-2">
                         <FormLabel>Media Source</FormLabel>
                         <RadioGroup
@@ -847,150 +914,75 @@ const InitiativeForm = () => {
                         >
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="link" id="media-link" />
-                            <label htmlFor="media-link" className="flex items-center gap-1 cursor-pointer text-sm">
-                              <Link2 className="h-4 w-4" />
-                              External Link (URL)
-                            </label>
+                            <label htmlFor="media-link" className="flex items-center gap-1 cursor-pointer text-sm"><Link2 className="h-4 w-4" />External Link</label>
                           </div>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="upload" id="media-upload" />
-                            <label htmlFor="media-upload" className="flex items-center gap-1 cursor-pointer text-sm">
-                              <Upload className="h-4 w-4" />
-                              Upload File
-                            </label>
+                            <label htmlFor="media-upload" className="flex items-center gap-1 cursor-pointer text-sm"><Upload className="h-4 w-4" />Upload File</label>
                           </div>
                         </RadioGroup>
                       </div>
 
-                      <FormField
-                        control={partnerForm.control}
-                        name="media_title"
-                        render={({ field }) => (
+                      <FormField control={partnerForm.control} name="media_title" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Media Title</FormLabel>
+                          <FormControl><Input placeholder="e.g., Integration Guide" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      {mediaSourceType === 'link' ? (
+                        <FormField control={partnerForm.control} name="media_url" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Media Title</FormLabel>
+                            <FormLabel>Media URL</FormLabel>
                             <FormControl>
-                              <Input placeholder="e.g., Integration Guide" {...field} />
+                              <Input placeholder={mediaType === 'video' ? 'https://youtube.com/watch?v=...' : 'https://...'} {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
-                        )}
-                      />
-
-                      {mediaSourceType === 'link' ? (
-                        <FormField
-                          control={partnerForm.control}
-                          name="media_url"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Media URL</FormLabel>
-                              <FormControl>
-                                <Input placeholder={mediaType === 'video' ? "https://youtube.com/watch?v=..." : "https://..."} {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                {mediaType === 'video' && 'Paste a link to YouTube, Vimeo, or any video hosting platform'}
-                                {mediaType === 'audio' && 'Paste a link to the audio file'}
-                                {mediaType === 'document' && 'Paste a link to the document (Google Drive, Dropbox, etc.)'}
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        )} />
                       ) : (
                         <div className="space-y-3">
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            accept={getAcceptedFileTypes(mediaType)}
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setMediaFile(file);
-                              }
-                            }}
-                          />
-                          <div 
-                            className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                            onClick={() => fileInputRef.current?.click()}
-                          >
+                          <input type="file" ref={fileInputRef} accept={getAcceptedFileTypes(mediaType)} className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) setMediaFile(file); }} />
+                          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors" onClick={() => fileInputRef.current?.click()}>
                             <Upload className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
                             {mediaFile ? (
                               <div className="space-y-1">
                                 <p className="text-sm font-medium text-primary">{mediaFile.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {(mediaFile.size / (1024 * 1024)).toFixed(2)} MB
-                                </p>
+                                <p className="text-xs text-muted-foreground">{(mediaFile.size / (1024 * 1024)).toFixed(2)} MB</p>
                               </div>
                             ) : (
                               <>
-                                <p className="text-sm text-muted-foreground mb-2">
-                                  Click to browse or drag and drop your {mediaType} file here
-                                </p>
-                                <Button type="button" variant="outline" size="sm" onClick={(e) => {
-                                  e.stopPropagation();
-                                  fileInputRef.current?.click();
-                                }}>
-                                  Choose File
-                                </Button>
+                                <p className="text-sm text-muted-foreground mb-2">Click to browse your {mediaType} file</p>
+                                <Button type="button" variant="outline" size="sm">Choose File</Button>
                               </>
                             )}
-                            <p className="text-xs text-muted-foreground mt-2">
-                              {getFileTypeDescription(mediaType)}
-                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">{getFileTypeDescription(mediaType)}</p>
                           </div>
                           {mediaFile && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive"
-                              onClick={() => {
-                                setMediaFile(null);
-                                if (fileInputRef.current) {
-                                  fileInputRef.current.value = '';
-                                }
-                              }}
-                            >
-                              Remove file
-                            </Button>
+                            <Button type="button" variant="ghost" size="sm" className="text-destructive" onClick={() => { setMediaFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>Remove file</Button>
                           )}
-                          <p className="text-xs text-muted-foreground">
-                            File will be uploaded when you click Update/Add Partner.
-                          </p>
                         </div>
                       )}
 
-                      <FormField
-                        control={partnerForm.control}
-                        name="media_description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Media Description</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Brief description of the media..."
-                                className="min-h-[80px]"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <FormField control={partnerForm.control} name="media_description" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Media Description</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Brief description of the media..." className="min-h-[80px]" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </div>
 
                     <DialogFooter>
-                      <Button type="button" variant="outline" onClick={() => setShowAddPartner(false)}>
-                        Cancel
-                      </Button>
-                      <Button 
-                        type="submit" 
-                        disabled={createInitiativePartner.isPending || updateInitiativePartner.isPending || isUploadingMedia}
-                      >
+                      <Button type="button" variant="outline" onClick={() => setShowAddPartner(false)}>Cancel</Button>
+                      <Button type="submit" disabled={createInitiativePartner.isPending || updateInitiativePartner.isPending || isUploadingMedia}>
                         {(createInitiativePartner.isPending || updateInitiativePartner.isPending || isUploadingMedia) && (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
-                        {isUploadingMedia ? 'Uploading Media...' : editingPartnerId ? 'Update Partner' : 'Add Partner'}
+                        {isUploadingMedia ? 'Uploading...' : editingPartnerId ? 'Update Partner' : 'Add Partner'}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -1008,65 +1000,35 @@ const InitiativeForm = () => {
                 {initiativePartners.map((ip: any) => (
                   <AccordionItem key={ip.id} value={ip.id}>
                     <AccordionTrigger className="hover:no-underline">
-                      <div className="flex items-center justify-between w-full pr-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <div className="flex items-center gap-3 w-full pr-4">
+                        {ip.partner?.logo_url ? (
+                          <img src={ip.partner.logo_url} alt={ip.partner.name} className="h-9 w-9 rounded-lg object-contain border border-border" />
+                        ) : (
+                          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
                             <Building2 className="h-5 w-5 text-primary" />
                           </div>
-                          <div className="text-left">
-                            <p className="font-medium">{ip.partner?.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {ip.integration_cost && `Integration: ₹${ip.integration_cost.toLocaleString()}`}
-                              {ip.integration_cost && ip.annual_cost && ' • '}
-                              {ip.annual_cost && `Annual: ₹${ip.annual_cost.toLocaleString()}`}
-                            </p>
-                          </div>
+                        )}
+                        <div className="text-left">
+                          <p className="font-semibold">{ip.partner?.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {ip.integration_cost ? `Integration: ₹${ip.integration_cost.toLocaleString()}` : ''}
+                            {ip.integration_cost && ip.annual_cost ? ' • ' : ''}
+                            {ip.annual_cost ? `Annual: ₹${ip.annual_cost.toLocaleString()}` : ''}
+                          </p>
                         </div>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="pl-13 space-y-4 pt-2">
+                      <div className="space-y-4 pt-2 pl-2">
                         <div className="grid gap-4 md:grid-cols-3 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Price Per Call</p>
-                            <p className="font-medium">
-                              {ip.pricing_per_call ? `₹${ip.pricing_per_call}` : '-'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">API Version</p>
-                            <p className="font-medium">{ip.api_version || '-'}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Billing Contact</p>
-                            <p className="font-medium">{ip.billing_contact || '-'}</p>
-                          </div>
+                          <div><p className="text-muted-foreground">Price Per Call</p><p className="font-medium">{ip.pricing_per_call ? `₹${ip.pricing_per_call}` : '-'}</p></div>
+                          <div><p className="text-muted-foreground">API Version</p><p className="font-medium">{ip.api_version || '-'}</p></div>
+                          <div><p className="text-muted-foreground">Billing Contact</p><p className="font-medium">{ip.billing_contact || '-'}</p></div>
                         </div>
-                        
-                        {ip.api_documentation && (
-                          <div>
-                            <p className="text-muted-foreground text-sm">API Documentation</p>
-                            <a href={ip.api_documentation} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm">
-                              {ip.api_documentation}
-                            </a>
-                          </div>
-                        )}
-
                         <div className="flex gap-2 pt-2">
-                          <Button size="sm" variant="outline" onClick={() => openEditPartner(ip)}>
-                            Edit Details
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
-                            onClick={() => handleDeletePartner(ip.id)}
-                            disabled={deleteInitiativePartner.isPending}
-                          >
-                            {deleteInitiativePartner.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
+                          <Button size="sm" variant="outline" onClick={() => openEditPartner(ip)}>Edit Details</Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeletePartner(ip.id)} disabled={deleteInitiativePartner.isPending}>
+                            {deleteInitiativePartner.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                           </Button>
                         </div>
                       </div>
@@ -1084,6 +1046,44 @@ const InitiativeForm = () => {
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+};
+
+// Helper component to show existing API docs for a partner
+const ExistingApiDocs = ({ partnerId }: { partnerId: string }) => {
+  const { data: docs } = useApiDocuments(partnerId);
+  const deleteDoc = useDeleteApiDocument();
+  const { toast } = useToast();
+
+  if (!docs || docs.length === 0) return null;
+
+  return (
+    <div className="space-y-1 mb-2">
+      <p className="text-xs text-muted-foreground font-medium">Existing documents:</p>
+      {docs.map((doc) => (
+        <div key={doc.id} className="flex items-center gap-2 text-sm bg-muted/40 rounded px-3 py-1.5">
+          <FileText className="h-3.5 w-3.5 text-primary" />
+          <span className="flex-1 font-medium">{doc.title}</span>
+          <span className="text-muted-foreground text-xs">{doc.file_name}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-destructive"
+            onClick={async () => {
+              try {
+                await deleteDoc.mutateAsync({ id: doc.id, filePath: doc.file_path, initiativePartnerId: doc.initiative_partner_id });
+                toast({ title: 'Document deleted' });
+              } catch {
+                toast({ variant: 'destructive', title: 'Failed to delete document' });
+              }
+            }}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      ))}
     </div>
   );
 };
