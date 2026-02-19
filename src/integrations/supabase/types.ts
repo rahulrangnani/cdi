@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_documents: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          initiative_partner_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          initiative_partner_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          initiative_partner_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_documents_initiative_partner_id_fkey"
+            columns: ["initiative_partner_id"]
+            isOneToOne: false
+            referencedRelation: "initiative_partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_specifications: {
         Row: {
           created_at: string
@@ -107,6 +145,7 @@ export type Database = {
         Row: {
           annual_cost: number | null
           api_documentation: string | null
+          api_notes: string | null
           api_version: string | null
           billing_contact: string | null
           created_at: string
@@ -128,6 +167,7 @@ export type Database = {
         Insert: {
           annual_cost?: number | null
           api_documentation?: string | null
+          api_notes?: string | null
           api_version?: string | null
           billing_contact?: string | null
           created_at?: string
@@ -149,6 +189,7 @@ export type Database = {
         Update: {
           annual_cost?: number | null
           api_documentation?: string | null
+          api_notes?: string | null
           api_version?: string | null
           billing_contact?: string | null
           created_at?: string
@@ -193,6 +234,7 @@ export type Database = {
           logo_url: string | null
           name: string
           overview: string | null
+          parent_id: string | null
           status: string
           updated_at: string
         }
@@ -204,6 +246,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           overview?: string | null
+          parent_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -215,10 +258,57 @@ export type Database = {
           logo_url?: string | null
           name?: string
           overview?: string | null
+          parent_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "initiatives_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "initiatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_features: {
+        Row: {
+          created_at: string
+          feature_name: string
+          id: string
+          initiative_partner_id: string
+          is_available: boolean
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          feature_name: string
+          id?: string
+          initiative_partner_id: string
+          is_available?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          feature_name?: string
+          id?: string
+          initiative_partner_id?: string
+          is_available?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_features_initiative_partner_id_fkey"
+            columns: ["initiative_partner_id"]
+            isOneToOne: false
+            referencedRelation: "initiative_partners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partners: {
         Row: {

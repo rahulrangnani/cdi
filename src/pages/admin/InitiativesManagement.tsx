@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useInitiatives, useDeleteInitiative } from '@/hooks/useInitiatives';
+import { ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -34,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 const InitiativesManagement = () => {
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  // Fetch ALL initiatives (no parentId filter) for admin view
   const { data: initiatives, isLoading } = useInitiatives({ search });
   const deleteInitiative = useDeleteInitiative();
   const { toast } = useToast();
@@ -104,21 +106,16 @@ const InitiativesManagement = () => {
                 initiatives.map((initiative) => (
                   <TableRow key={initiative.id}>
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        {initiative.logo_url ? (
-                          <img
-                            src={initiative.logo_url}
-                            alt={initiative.name}
-                            className="h-8 w-8 rounded object-contain"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
-                            <span className="text-sm font-medium text-primary">
-                              {initiative.name.charAt(0)}
-                            </span>
-                          </div>
+                      <div className="flex items-center gap-2">
+                        {(initiative as any).parent_id && (
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground ml-2 shrink-0" />
                         )}
-                        <span className="font-medium">{initiative.name}</span>
+                        <span className={`font-medium ${(initiative as any).parent_id ? 'text-muted-foreground' : ''}`}>
+                          {initiative.name}
+                        </span>
+                        {!(initiative as any).parent_id && (
+                          <span className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded font-medium ml-1">Main</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>{initiative.category || '-'}</TableCell>

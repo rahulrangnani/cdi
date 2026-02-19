@@ -1,154 +1,422 @@
 import { useParams, Link } from 'react-router-dom';
 import { useInitiative } from '@/hooks/useInitiatives';
+import { useApiDocuments, getSignedApiDocUrl } from '@/hooks/useApiDocuments';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Building2, FileCode, FileText, Phone, Loader2, Copy, Check, Film, Music } from 'lucide-react';
+import {
+  ArrowLeft, Building2, FileCode, FileText, Phone, Loader2, Copy, Check,
+  Film, Music, CheckCircle2, XCircle, DollarSign, BarChart3, ExternalLink,
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
 
-// Helper to check if a URL is a storage path (not a full URL)
-const isStoragePath = (url: string): boolean => {
-  return (url.startsWith('videos/') || url.startsWith('audios/') || url.startsWith('documents/')) && !url.startsWith('http');
-};
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
-// Component to handle media display with signed URLs for private storage
+const isStoragePath = (url: string) =>
+  (url.startsWith('videos/') || url.startsWith('audios/') || url.startsWith('documents/')) && !url.startsWith('http');
+
+// ─── Secure Media Player ─────────────────────────────────────────────────────
+
 const SecureMediaPlayer = ({ mediaUrl, mediaTitle, mediaType }: { mediaUrl: string; mediaTitle?: string; mediaType?: string }) => {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const getSignedUrl = async () => {
-      // If it's a YouTube/Vimeo URL or full http URL, use directly
+    const load = async () => {
       if (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be') || mediaUrl.includes('vimeo.com')) {
-        setSignedUrl(mediaUrl);
-        setIsLoading(false);
-        return;
+        setSignedUrl(mediaUrl); setIsLoading(false); return;
       }
-
-      // If it's a storage path, get a signed URL
       if (isStoragePath(mediaUrl)) {
         try {
-          const { data, error: signError } = await supabase.storage
-            .from('partner-videos')
-            .createSignedUrl(mediaUrl, 3600); // 1 hour expiry
-
-          if (signError) throw signError;
+          const { data, error: e } = await supabase.storage.from('partner-videos').createSignedUrl(mediaUrl, 3600);
+          if (e) throw e;
           setSignedUrl(data.signedUrl);
-        } catch (err) {
-          console.error('Error getting signed URL:', err);
-          setError('Failed to load media');
-        }
+        } catch { setError('Failed to load media'); }
       } else {
-        // Assume it's a direct URL
         setSignedUrl(mediaUrl);
       }
       setIsLoading(false);
     };
-
-    getSignedUrl();
+    load();
   }, [mediaUrl]);
 
-  if (isLoading) {
-    return (
-      <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="aspect-video rounded-lg bg-muted flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (error || !signedUrl) return <div className="aspect-video rounded-lg bg-muted flex items-center justify-center"><p className="text-muted-foreground">{error || 'Media unavailable'}</p></div>;
 
-  if (error || !signedUrl) {
-    return (
-      <div className="aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-        <p className="text-muted-foreground">{error || 'Media unavailable'}</p>
-      </div>
-    );
-  }
-
-  // YouTube/Vimeo embed for videos
   if (signedUrl.includes('youtube.com') || signedUrl.includes('youtu.be') || signedUrl.includes('vimeo.com')) {
-    return (
-      <iframe
-        src={signedUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
-        className="w-full h-full"
-        allowFullScreen
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        title={mediaTitle || 'Partner video'}
-      />
-    );
+    return <iframe src={signedUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')} className="w-full h-full" allowFullScreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" title={mediaTitle || 'Partner video'} />;
   }
 
-  // Handle based on media type
   const type = mediaType || 'video';
-  
-  if (type === 'video') {
-    return (
-      <video
-        src={signedUrl}
-        className="w-full h-full"
-        controls
-        controlsList="nodownload"
-        preload="metadata"
-      >
-        Your browser does not support the video tag.
-      </video>
-    );
-  }
-  
-  if (type === 'audio') {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 bg-muted rounded-lg">
-        <Music className="h-16 w-16 text-primary mb-4" />
-        <audio
-          src={signedUrl}
-          controls
-          controlsList="nodownload"
-          className="w-full max-w-md"
-        >
-          Your browser does not support the audio tag.
-        </audio>
-      </div>
-    );
-  }
-  
-  if (type === 'document') {
-    // For documents, show a download/view link
-    return (
-      <div className="flex flex-col items-center justify-center p-8 bg-muted rounded-lg">
-        <FileText className="h-16 w-16 text-primary mb-4" />
-        <p className="text-sm text-muted-foreground mb-4">{mediaTitle || 'Document'}</p>
-        <a
-          href={signedUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-        >
-          <FileText className="h-4 w-4" />
-          View Document
-        </a>
-      </div>
-    );
-  }
-
+  if (type === 'video') return <video src={signedUrl} className="w-full h-full" controls controlsList="nodownload" preload="metadata">Your browser does not support video.</video>;
+  if (type === 'audio') return <div className="flex flex-col items-center justify-center p-8 bg-muted rounded-lg"><Music className="h-16 w-16 text-primary mb-4" /><audio src={signedUrl} controls controlsList="nodownload" className="w-full max-w-md" /></div>;
+  if (type === 'document') return <div className="flex flex-col items-center justify-center p-8 bg-muted rounded-lg"><FileText className="h-16 w-16 text-primary mb-4" /><a href={signedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"><FileText className="h-4 w-4" />View Document</a></div>;
   return null;
 };
+
+// ─── API Documents list ───────────────────────────────────────────────────────
+
+const ApiDocsList = ({ initiativePartnerId }: { initiativePartnerId: string }) => {
+  const { data: docs, isLoading } = useApiDocuments(initiativePartnerId);
+  const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const openDoc = async (doc: { id: string; file_path: string; title: string }) => {
+    setLoadingDocId(doc.id);
+    const url = await getSignedApiDocUrl(doc.file_path);
+    setLoadingDocId(null);
+    if (url) { window.open(url, '_blank'); }
+    else { toast({ variant: 'destructive', title: 'Could not open document' }); }
+  };
+
+  if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />;
+  if (!docs || docs.length === 0) return null;
+
+  return (
+    <div className="space-y-2 mt-4">
+      <h5 className="text-sm font-semibold">API Documentation Files</h5>
+      <div className="grid gap-2">
+        {docs.map((doc) => (
+          <button
+            key={doc.id}
+            onClick={() => openDoc(doc)}
+            disabled={loadingDocId === doc.id}
+            className="flex items-center gap-3 p-3 border border-border/60 rounded-lg hover:bg-muted/50 transition-colors text-left group"
+          >
+            <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
+              {loadingDocId === doc.id ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <FileText className="h-4 w-4 text-primary" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{doc.title}</p>
+              <p className="text-xs text-muted-foreground truncate">{doc.file_name}</p>
+            </div>
+            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── Feature Comparison Table ─────────────────────────────────────────────────
+
+const FeatureComparison = ({ initiativePartners }: { initiativePartners: any[] }) => {
+  // Collect all unique feature names
+  const allFeatures = Array.from(
+    new Set(
+      initiativePartners.flatMap((ip) =>
+        (ip.partner_features || []).map((f: any) => f.feature_name)
+      )
+    )
+  ).sort();
+
+  if (allFeatures.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold flex items-center gap-2">
+        <BarChart3 className="h-5 w-5 text-primary" />
+        Feature Comparison
+      </h3>
+      <div className="overflow-x-auto rounded-xl border border-border/60 shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-48 font-semibold">Feature</TableHead>
+              {initiativePartners.map((ip) => (
+                <TableHead key={ip.id} className="text-center font-semibold min-w-[120px]">
+                  <div className="flex flex-col items-center gap-1">
+                    {ip.partner?.logo_url ? (
+                      <img src={ip.partner.logo_url} alt={ip.partner.name} className="h-6 w-auto object-contain" />
+                    ) : null}
+                    <span className="text-xs">{ip.partner?.name}</span>
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {allFeatures.map((featureName, idx) => (
+              <TableRow key={featureName} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                <TableCell className="font-medium text-sm">{featureName}</TableCell>
+                {initiativePartners.map((ip) => {
+                  const feat = (ip.partner_features || []).find((f: any) => f.feature_name === featureName);
+                  return (
+                    <TableCell key={ip.id} className="text-center">
+                      {!feat ? (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      ) : feat.is_available ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <CheckCircle2 className="h-5 w-5 text-primary mx-auto" />
+                          {feat.notes && <span className="text-xs text-muted-foreground">{feat.notes}</span>}
+                        </div>
+                      ) : (
+                        <XCircle className="h-5 w-5 text-muted-foreground/50 mx-auto" />
+                      )}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};
+
+// ─── Commercial Comparison Table ──────────────────────────────────────────────
+
+const CommercialComparison = ({ initiativePartners }: { initiativePartners: any[] }) => {
+  if (initiativePartners.length < 2) return null;
+
+  const rows = [
+    { label: 'Integration Cost', key: 'integration_cost', format: (v: any) => v ? `₹${Number(v).toLocaleString()}` : '—' },
+    { label: 'Annual Cost', key: 'annual_cost', format: (v: any) => v ? `₹${Number(v).toLocaleString()}` : '—' },
+    { label: 'Price Per Call', key: 'pricing_per_call', format: (v: any, ip: any) => v ? `₹${v} / ${ip.pricing_unit || 'call'}` : '—' },
+    { label: 'Billing Contact', key: 'billing_contact', format: (v: any) => v || '—' },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold flex items-center gap-2">
+        <DollarSign className="h-5 w-5 text-primary" />
+        Commercial Comparison
+      </h3>
+      <div className="overflow-x-auto rounded-xl border border-border/60 shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-48 font-semibold">Detail</TableHead>
+              {initiativePartners.map((ip) => (
+                <TableHead key={ip.id} className="text-center font-semibold min-w-[140px]">
+                  <div className="flex flex-col items-center gap-1">
+                    {ip.partner?.logo_url ? (
+                      <img src={ip.partner.logo_url} alt={ip.partner.name} className="h-6 w-auto object-contain" />
+                    ) : null}
+                    <span className="text-xs">{ip.partner?.name}</span>
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row, idx) => (
+              <TableRow key={row.key} className={idx % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                <TableCell className="font-medium text-sm">{row.label}</TableCell>
+                {initiativePartners.map((ip) => (
+                  <TableCell key={ip.id} className="text-center text-sm">
+                    {row.format((ip as any)[row.key], ip)}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};
+
+// ─── Partner Card (improved UI) ───────────────────────────────────────────────
+
+const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | null; onCopy: (text: string, id: string) => void }) => {
+  return (
+    <Card className="border border-border/60 shadow-sm overflow-hidden">
+      {/* Partner header */}
+      <div className="flex items-center gap-4 px-5 py-4 border-b border-border/50 bg-muted/20">
+        {ip.partner?.logo_url ? (
+          <img src={ip.partner.logo_url} alt={ip.partner.name} className="h-10 w-auto max-w-[80px] object-contain" />
+        ) : (
+          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <Building2 className="h-5 w-5 text-primary" />
+          </div>
+        )}
+        <div className="flex-1">
+          <h3 className="font-bold text-base">{ip.partner?.name}</h3>
+          <p className="text-xs text-muted-foreground">
+            {ip.pricing_per_call ? `₹${ip.pricing_per_call} / ${ip.pricing_unit || 'call'}` : 'Pricing on request'}
+          </p>
+        </div>
+        <Badge variant="outline" className="text-xs">v{ip.api_version || '1.0'}</Badge>
+      </div>
+
+      {/* Tabs */}
+      <CardContent className="p-0">
+        <Tabs defaultValue="commercial" className="w-full">
+          <TabsList className="w-full rounded-none border-b border-border/50 bg-muted/10 h-10 justify-start px-4 gap-1">
+            <TabsTrigger value="commercial" className="text-xs h-8 data-[state=active]:bg-background">Commercial</TabsTrigger>
+            <TabsTrigger value="api" className="text-xs h-8 data-[state=active]:bg-background">API Docs</TabsTrigger>
+            <TabsTrigger value="media" className="text-xs h-8 data-[state=active]:bg-background">Media</TabsTrigger>
+            <TabsTrigger value="products" className="text-xs h-8 data-[state=active]:bg-background">Products</TabsTrigger>
+            <TabsTrigger value="support" className="text-xs h-8 data-[state=active]:bg-background">Support</TabsTrigger>
+          </TabsList>
+
+          <div className="p-5">
+            <TabsContent value="commercial" className="mt-0 space-y-4">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  { label: 'Price Per Call', value: ip.pricing_per_call ? `${ip.currency === 'USD' ? '$' : ip.currency === 'EUR' ? '€' : '₹'}${ip.pricing_per_call}` : 'N/A', sub: ip.pricing_unit },
+                  { label: 'Integration Cost', value: ip.integration_cost ? `₹${Number(ip.integration_cost).toLocaleString()}` : 'N/A' },
+                  { label: 'Annual Cost', value: ip.annual_cost ? `₹${Number(ip.annual_cost).toLocaleString()}` : 'N/A' },
+                ].map((item) => (
+                  <div key={item.label} className="bg-muted/30 rounded-lg px-3 py-2.5">
+                    <p className="text-xs text-muted-foreground mb-0.5">{item.label}</p>
+                    <p className="font-bold text-sm">{item.value}
+                      {item.sub && <span className="text-xs font-normal text-muted-foreground ml-1">/ {item.sub}</span>}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {ip.billing_contact && <p className="text-sm"><span className="text-muted-foreground">Billing: </span>{ip.billing_contact}</p>}
+              {ip.terms_and_conditions && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Terms & Conditions</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ip.terms_and_conditions}</p>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="api" className="mt-0 space-y-4">
+              {ip.api_documentation && (
+                <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+                  <FileCode className="h-4 w-4 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground">Documentation URL</p>
+                    <a href={ip.api_documentation} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate block">{ip.api_documentation}</a>
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => onCopy(ip.api_documentation, `doc-${ip.id}`)}>
+                    {copiedId === `doc-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  </Button>
+                </div>
+              )}
+
+              {(ip as any).api_notes && (
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">API Notes</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/30 rounded-lg p-3">{(ip as any).api_notes}</p>
+                </div>
+              )}
+
+              <ApiDocsList initiativePartnerId={ip.id} />
+
+              {ip.api_specifications && ip.api_specifications.length > 0 && (
+                <div className="space-y-3">
+                  {ip.api_specifications.map((spec: any) => (
+                    <div key={spec.id} className="space-y-3">
+                      <p className="text-sm font-semibold">API Specification v{spec.version}</p>
+                      {spec.input_parameters && Array.isArray(spec.input_parameters) && (spec.input_parameters as any[]).length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Input Parameters</p>
+                          <div className="overflow-x-auto rounded-lg border border-border/50">
+                            <Table>
+                              <TableHeader>
+                                <TableRow className="bg-muted/30">
+                                  <TableHead className="text-xs">Name</TableHead>
+                                  <TableHead className="text-xs">Type</TableHead>
+                                  <TableHead className="text-xs">Required</TableHead>
+                                  <TableHead className="text-xs">Description</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {(spec.input_parameters as Array<{ name: string; type: string; required: boolean; description: string }>).map((param, idx) => (
+                                  <TableRow key={idx}>
+                                    <TableCell className="font-mono text-xs">{param.name}</TableCell>
+                                    <TableCell className="text-xs">{param.type}</TableCell>
+                                    <TableCell><Badge variant={param.required ? 'default' : 'secondary'} className="text-xs">{param.required ? 'Yes' : 'No'}</Badge></TableCell>
+                                    <TableCell className="text-xs text-muted-foreground">{param.description}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!ip.api_documentation && !(ip as any).api_notes && (!ip.api_specifications || ip.api_specifications.length === 0) && (
+                <p className="text-sm text-muted-foreground">No API documentation available.</p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="media" className="mt-0">
+              {ip.media_url ? (
+                <div className="space-y-3">
+                  {ip.media_description && <p className="text-sm text-muted-foreground">{ip.media_description}</p>}
+                  <div className={ip.media_type === 'video' || !ip.media_type ? 'aspect-video rounded-lg overflow-hidden bg-muted' : ''}>
+                    <SecureMediaPlayer mediaUrl={ip.media_url} mediaTitle={ip.media_title || 'Media'} mediaType={ip.media_type || 'video'} />
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No media available.</p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="products" className="mt-0">
+              {ip.initiative_partner_products && ip.initiative_partner_products.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {ip.initiative_partner_products.map((ipp: any) => (
+                    <div key={ipp.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <span className="text-sm font-medium">{ipp.product?.name || 'Unknown'}</span>
+                      <Badge variant={ipp.usage_status === 'in_use' ? 'default' : 'secondary'} className="text-xs">
+                        {ipp.usage_status === 'in_use' ? 'Live' : ipp.usage_status || 'Planned'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No products mapped yet.</p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="support" className="mt-0">
+              {ip.support_details ? (
+                <div className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Production Contact</p>
+                      <div className="text-sm space-y-0.5">
+                        <p className="font-medium">{ip.support_details.production_contact_name || '—'}</p>
+                        <p className="text-muted-foreground">{ip.support_details.production_contact_email}</p>
+                        <p className="text-muted-foreground">{ip.support_details.production_contact_phone}</p>
+                      </div>
+                    </div>
+                    {ip.support_details.sandbox_contact && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Sandbox Contact</p>
+                        <p className="text-sm text-muted-foreground">{ip.support_details.sandbox_contact}</p>
+                      </div>
+                    )}
+                  </div>
+                  {ip.support_details.known_issues && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Known Issues</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ip.support_details.known_issues}</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No support details available.</p>
+              )}
+            </TabsContent>
+          </div>
+        </Tabs>
+      </CardContent>
+    </Card>
+  );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 const InitiativeDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -163,377 +431,64 @@ const InitiativeDetail = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
 
-  if (error || !initiative) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
-        <p className="text-destructive">Failed to load initiative details.</p>
-        <Button asChild>
-          <Link to="/">Go Back</Link>
-        </Button>
-      </div>
-    );
-  }
+  if (error || !initiative) return (
+    <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+      <p className="text-destructive">Failed to load initiative details.</p>
+      <Button asChild><Link to="/">Go Back</Link></Button>
+    </div>
+  );
+
+  const partners = initiative.initiative_partners || [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-start gap-4">
         <Button variant="ghost" size="icon" asChild>
-          <Link to="/">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
+          <Link to="/"><ArrowLeft className="h-4 w-4" /></Link>
         </Button>
-        <div className="flex items-center gap-3">
-          {initiative.logo_url ? (
-            <img
-              src={initiative.logo_url}
-              alt={initiative.name}
-              className="h-12 w-12 rounded-lg object-contain"
-            />
-          ) : (
-            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <span className="text-xl font-bold text-primary">
-                {initiative.name.charAt(0)}
-              </span>
-            </div>
-          )}
-          <div>
+        <div className="flex-1">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold">{initiative.name}</h1>
-            <div className="flex items-center gap-2">
-              {initiative.category && (
-                <span className="text-sm text-muted-foreground">{initiative.category}</span>
-              )}
-              <Badge variant={initiative.status === 'active' ? 'default' : 'secondary'}>
-                {initiative.status}
-              </Badge>
-            </div>
+            <Badge variant={initiative.status === 'active' ? 'default' : 'secondary'} className={initiative.status === 'active' ? 'bg-primary' : ''}>
+              {initiative.status}
+            </Badge>
+            {initiative.category && <span className="text-sm text-muted-foreground">{initiative.category}</span>}
           </div>
+          {initiative.overview && (
+            <p className="text-muted-foreground mt-2 max-w-2xl">{initiative.overview}</p>
+          )}
         </div>
       </div>
 
-      {initiative.overview && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground whitespace-pre-wrap">{initiative.overview}</p>
-          </CardContent>
-        </Card>
+      {/* Comparison Tables */}
+      {partners.length >= 2 && (
+        <div className="space-y-6">
+          <FeatureComparison initiativePartners={partners} />
+          <CommercialComparison initiativePartners={partners} />
+        </div>
       )}
 
+      {/* Partner Cards */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <Building2 className="h-5 w-5" />
           Partner Integrations
+          <Badge variant="secondary" className="ml-1">{partners.length}</Badge>
         </h2>
 
-        {initiative.initiative_partners && initiative.initiative_partners.length > 0 ? (
-          <Accordion type="single" collapsible className="space-y-4">
-            {initiative.initiative_partners.map((ip) => (
-              <AccordionItem key={ip.id} value={ip.id} className="border rounded-lg px-4">
-                <AccordionTrigger className="hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    {ip.partner?.logo_url ? (
-                      <img
-                        src={ip.partner.logo_url}
-                        alt={ip.partner.name}
-                        className="h-8 w-8 rounded object-contain"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded bg-secondary flex items-center justify-center">
-                        <span className="text-sm font-medium">
-                          {ip.partner?.name?.charAt(0) || 'P'}
-                        </span>
-                      </div>
-                    )}
-                    <span className="font-medium">{ip.partner?.name}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-4">
-                  <Tabs defaultValue="commercial" className="w-full">
-                    <TabsList className="grid w-full grid-cols-5">
-                      <TabsTrigger value="commercial">Commercial</TabsTrigger>
-                      <TabsTrigger value="api">API Docs</TabsTrigger>
-                      <TabsTrigger value="media">Media</TabsTrigger>
-                      <TabsTrigger value="products">Products</TabsTrigger>
-                      <TabsTrigger value="support">Support</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="commercial" className="mt-4 space-y-4">
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Price Per Call</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-2xl font-bold">
-                              {ip.currency || '₹'} {ip.pricing_per_call || 'N/A'}
-                              <span className="text-sm font-normal text-muted-foreground ml-1">
-                                / {ip.pricing_unit || 'call'}
-                              </span>
-                            </p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Integration Cost</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-2xl font-bold">
-                              {ip.integration_cost ? `₹${ip.integration_cost.toLocaleString()}` : 'N/A'}
-                            </p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-sm">Annual Cost</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <p className="text-2xl font-bold">
-                              {ip.annual_cost ? `₹${ip.annual_cost.toLocaleString()}` : 'N/A'}
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                      {ip.billing_contact && (
-                        <div>
-                          <h4 className="font-medium mb-1">Billing Contact</h4>
-                          <p className="text-sm text-muted-foreground">{ip.billing_contact}</p>
-                        </div>
-                      )}
-                      {ip.terms_and_conditions && (
-                        <div>
-                          <h4 className="font-medium mb-1">Terms & Conditions</h4>
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                            {ip.terms_and_conditions}
-                          </p>
-                        </div>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="api" className="mt-4 space-y-4">
-                      {ip.api_documentation ? (
-                        <div className="relative">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="absolute top-2 right-2"
-                            onClick={() => copyToClipboard(ip.api_documentation!, `doc-${ip.id}`)}
-                          >
-                            {copiedId === `doc-${ip.id}` ? (
-                              <Check className="h-4 w-4" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-                            <code>{ip.api_documentation}</code>
-                          </pre>
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">No API documentation available.</p>
-                      )}
-
-                      {ip.api_specifications && ip.api_specifications.length > 0 && (
-                        <div className="space-y-4">
-                          {ip.api_specifications.map((spec) => (
-                            <Card key={spec.id}>
-                              <CardHeader>
-                                <CardTitle className="text-sm flex items-center gap-2">
-                                  <FileCode className="h-4 w-4" />
-                                  API Specification v{spec.version}
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                {spec.input_parameters && Array.isArray(spec.input_parameters) && (
-                                  <div>
-                                    <h5 className="font-medium mb-2">Input Parameters</h5>
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead>Name</TableHead>
-                                          <TableHead>Type</TableHead>
-                                          <TableHead>Required</TableHead>
-                                          <TableHead>Description</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {(spec.input_parameters as Array<{ name: string; type: string; required: boolean; description: string }>).map((param, idx) => (
-                                          <TableRow key={idx}>
-                                            <TableCell className="font-mono text-sm">{param.name}</TableCell>
-                                            <TableCell>{param.type}</TableCell>
-                                            <TableCell>
-                                              <Badge variant={param.required ? 'default' : 'secondary'}>
-                                                {param.required ? 'Yes' : 'No'}
-                                              </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground">
-                                              {param.description}
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                )}
-                                {spec.output_parameters && Array.isArray(spec.output_parameters) && (
-                                  <div>
-                                    <h5 className="font-medium mb-2">Output Parameters</h5>
-                                    <Table>
-                                      <TableHeader>
-                                        <TableRow>
-                                          <TableHead>Name</TableHead>
-                                          <TableHead>Type</TableHead>
-                                          <TableHead>Description</TableHead>
-                                        </TableRow>
-                                      </TableHeader>
-                                      <TableBody>
-                                        {(spec.output_parameters as Array<{ name: string; type: string; description: string }>).map((param, idx) => (
-                                          <TableRow key={idx}>
-                                            <TableCell className="font-mono text-sm">{param.name}</TableCell>
-                                            <TableCell>{param.type}</TableCell>
-                                            <TableCell className="text-muted-foreground">
-                                              {param.description}
-                                            </TableCell>
-                                          </TableRow>
-                                        ))}
-                                      </TableBody>
-                                    </Table>
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="media" className="mt-4">
-                      {ip.media_url ? (
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-sm flex items-center gap-2">
-                              {ip.media_type === 'video' && <Film className="h-4 w-4" />}
-                              {ip.media_type === 'audio' && <Music className="h-4 w-4" />}
-                              {ip.media_type === 'document' && <FileText className="h-4 w-4" />}
-                              {!ip.media_type && <Film className="h-4 w-4" />}
-                              {ip.media_title || 'Media'}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            {ip.media_description && (
-                              <p className="text-sm text-muted-foreground mb-4">
-                                {ip.media_description}
-                              </p>
-                            )}
-                            <div className={ip.media_type === 'video' || !ip.media_type ? "aspect-video rounded-lg overflow-hidden bg-muted" : ""}>
-                              <SecureMediaPlayer 
-                                mediaUrl={ip.media_url} 
-                                mediaTitle={ip.media_title || 'Media'} 
-                                mediaType={ip.media_type || 'video'}
-                              />
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        <p className="text-muted-foreground">No media available.</p>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="products" className="mt-4">
-                      {ip.initiative_partner_products && ip.initiative_partner_products.length > 0 ? (
-                        <div className="grid gap-4 md:grid-cols-2">
-                          {ip.initiative_partner_products.map((ipp) => (
-                            <Card key={ipp.id}>
-                              <CardHeader className="pb-2">
-                                <div className="flex items-center justify-between">
-                                  <CardTitle className="text-sm">
-                                    {ipp.product?.name || 'Unknown Product'}
-                                  </CardTitle>
-                                  <Badge variant={ipp.usage_status === 'in_use' ? 'default' : 'secondary'}>
-                                    {ipp.usage_status === 'in_use' ? 'Live' : ipp.usage_status || 'planned'}
-                                  </Badge>
-                                </div>
-                              </CardHeader>
-                              <CardContent>
-                                {ipp.implementation_date && (
-                                  <p className="text-xs text-muted-foreground">
-                                    Implemented: {new Date(ipp.implementation_date).toLocaleDateString()}
-                                  </p>
-                                )}
-                                {ipp.notes && (
-                                  <p className="text-sm mt-2">{ipp.notes}</p>
-                                )}
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">No products mapped yet.</p>
-                      )}
-                    </TabsContent>
-
-                    <TabsContent value="support" className="mt-4">
-                      {ip.support_details ? (
-                        <div className="space-y-4">
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-sm flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                Support Contacts
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="grid gap-4 md:grid-cols-2">
-                                <div>
-                                  <h5 className="font-medium mb-2">Production Contact</h5>
-                                  <div className="text-sm space-y-1">
-                                    <p>{ip.support_details.production_contact_name || 'N/A'}</p>
-                                    <p className="text-muted-foreground">
-                                      {ip.support_details.production_contact_email}
-                                    </p>
-                                    <p className="text-muted-foreground">
-                                      {ip.support_details.production_contact_phone}
-                                    </p>
-                                  </div>
-                                </div>
-                                {ip.support_details.sandbox_contact && (
-                                  <div>
-                                    <h5 className="font-medium mb-2">Sandbox Contact</h5>
-                                    <p className="text-sm text-muted-foreground">
-                                      {ip.support_details.sandbox_contact}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                              {ip.support_details.known_issues && (
-                                <div>
-                                  <h5 className="font-medium mb-2">Known Issues</h5>
-                                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                                    {ip.support_details.known_issues}
-                                  </p>
-                                </div>
-                              )}
-                            </CardContent>
-                          </Card>
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">No support details available.</p>
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                </AccordionContent>
-              </AccordionItem>
+        {partners.length > 0 ? (
+          <div className="grid gap-6 lg:grid-cols-1 xl:grid-cols-2">
+            {partners.map((ip) => (
+              <PartnerCard key={ip.id} ip={ip} copiedId={copiedId} onCopy={copyToClipboard} />
             ))}
-          </Accordion>
+          </div>
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
