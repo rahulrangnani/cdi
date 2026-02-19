@@ -170,7 +170,7 @@ const InitiativeForm = () => {
       form.reset({
         name: initiative.name,
         description: initiative.description || '',
-        parent_id: (initiative as any).parent_id || '',
+        parent_id: initiative.parent_id || '',
       });
     }
   }, [initiative, form]);
@@ -184,7 +184,7 @@ const InitiativeForm = () => {
         status: 'active',
         category: null,
         logo_url: null,
-        parent_id: data.parent_id || null,
+        parent_id: (data.parent_id && data.parent_id !== '__none__') ? data.parent_id : null,
       } as any;
 
       if (isEditing) {
@@ -509,14 +509,17 @@ const InitiativeForm = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parent Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <Select
+                      onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)}
+                      value={field.value || '__none__'}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select parent (leave empty for main category)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">— No parent (Main Category) —</SelectItem>
+                        <SelectItem value="__none__">— No parent (Main Category) —</SelectItem>
                         {parentInitiatives
                           ?.filter(p => p.id !== id) // can't be own parent
                           .map((p) => (
