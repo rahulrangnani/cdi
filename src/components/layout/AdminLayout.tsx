@@ -3,15 +3,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
   LayoutDashboard,
-  Rocket,
+  FolderOpen,
+  Layers,
   ChevronLeft,
   LogOut,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/admin/initiatives', label: 'Initiatives', icon: Rocket },
+  { href: '/admin/initiatives', label: 'Initiatives', icon: Layers },
+  { href: '/admin/partners', label: 'Partners', icon: Users },
 ];
 
 const AdminLayout = () => {

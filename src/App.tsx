@@ -15,6 +15,7 @@ import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import InitiativesManagement from "./pages/admin/InitiativesManagement";
 import InitiativeForm from "./pages/admin/InitiativeForm";
+import CategoryForm from "./pages/admin/CategoryForm";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import PartnerForm from "./pages/admin/PartnerForm";
 import NotFound from "./pages/NotFound";
@@ -44,8 +45,12 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminLayout /></ProtectedRoute>}>
               <Route index element={<AdminDashboard />} />
               <Route path="initiatives" element={<InitiativesManagement />} />
+              {/* Sub-initiative form (with partner management) */}
               <Route path="initiatives/new" element={<InitiativeForm />} />
               <Route path="initiatives/:id" element={<InitiativeForm />} />
+              {/* Main category form */}
+              <Route path="categories/new" element={<CategoryForm />} />
+              <Route path="categories/:id" element={<CategoryForm />} />
               {/* Partners routes */}
               <Route path="partners" element={<PartnersManagement />} />
               <Route path="partners/new" element={<PartnerForm />} />
