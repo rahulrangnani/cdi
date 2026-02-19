@@ -56,7 +56,9 @@ import { Switch } from '@/components/ui/switch';
 const initiativeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-  parent_id: z.string().optional(),
+  overview: z.string().optional(),
+  status: z.string().default('active'),
+  parent_id: z.string().optional(), // Optional — initiatives can exist without a main category
 });
 
 type InitiativeFormValues = z.infer<typeof initiativeSchema>;
@@ -138,7 +140,7 @@ const InitiativeForm = () => {
 
   const form = useForm<InitiativeFormValues>({
     resolver: zodResolver(initiativeSchema),
-    defaultValues: { name: '', description: '', parent_id: '' },
+    defaultValues: { name: '', description: '', overview: '', status: 'active', parent_id: '' },
   });
 
   const partnerForm = useForm<PartnerFormValues>({
@@ -170,6 +172,8 @@ const InitiativeForm = () => {
       form.reset({
         name: initiative.name,
         description: initiative.description || '',
+        overview: initiative.overview || '',
+        status: initiative.status || 'active',
         parent_id: initiative.parent_id || '',
       });
     }
@@ -180,8 +184,8 @@ const InitiativeForm = () => {
       const payload = {
         name: data.name,
         description: data.description || null,
-        overview: null,
-        status: 'active',
+        overview: data.overview || null,
+        status: data.status || 'active',
         category: null,
         logo_url: null,
         parent_id: (data.parent_id && data.parent_id !== '__none__') ? data.parent_id : null,
@@ -190,18 +194,18 @@ const InitiativeForm = () => {
       if (isEditing) {
         await updateInitiative.mutateAsync({ id, ...payload });
         toast({ title: 'Initiative updated successfully' });
+        navigate('/admin/initiatives');
       } else {
         const result = await createInitiative.mutateAsync(payload);
         toast({ title: 'Initiative created successfully' });
         navigate(`/admin/initiatives/${result.id}`);
-        return;
       }
-      navigate('/admin/initiatives');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Submit error:', error);
       toast({
         variant: 'destructive',
         title: `Failed to ${isEditing ? 'update' : 'create'} initiative`,
-        description: 'Please try again.',
+        description: error?.message || 'Please try again.',
       });
     }
   };
@@ -472,22 +476,22 @@ const InitiativeForm = () => {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {isEditing ? 'Edit Sub-Initiative' : 'Create Sub-Initiative'}
+            {isEditing ? 'Edit Initiative' : 'Create Initiative'}
           </h1>
           <p className="text-muted-foreground">
             {isEditing
-              ? 'Update details and manage partner integrations'
-              : 'Add a sub-initiative under a main category (e.g., VKYC under KYC)'}
+              ? 'Update initiative details and manage partner integrations'
+              : 'Add an initiative (optionally under a main category)'}
           </p>
         </div>
       </div>
 
-      {/* Sub-Initiative Basic Details */}
+      {/* Initiative Basic Details */}
       <Card>
         <CardHeader>
-          <CardTitle>Sub-Initiative Details</CardTitle>
+          <CardTitle>Initiative Details</CardTitle>
           <CardDescription>
-            A sub-initiative lives under a main category and directly maps to partner integrations
+            Configure the initiative's name, description, overview and category assignment
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -500,7 +504,7 @@ const InitiativeForm = () => {
                   <FormItem>
                     <FormLabel>Name *</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., VKYC" {...field} />
+                      <Input placeholder="e.g., VKYC, Lead Gen Voice Bot" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -512,18 +516,18 @@ const InitiativeForm = () => {
                 name="parent_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Main Category *</FormLabel>
+                    <FormLabel>Main Category <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>
                     <Select
                       onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)}
                       value={field.value || '__none__'}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a main category (e.g., KYC, Voice Bots)" />
+                          <SelectValue placeholder="No main category (standalone initiative)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="__none__">— Select a main category —</SelectItem>
+                        <SelectItem value="__none__">— No category (standalone) —</SelectItem>
                         {parentInitiatives
                           ?.filter(p => p.id !== id)
                           .map((p) => (
@@ -532,8 +536,7 @@ const InitiativeForm = () => {
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Tag this sub-initiative to a main category (e.g., VKYC → KYC). If no categories exist yet,{' '}
-                      <Link to="/admin/categories/new" className="text-primary underline">create one first</Link>.
+                      Optionally group this under a main category (e.g., VKYC → KYC). Standalone initiatives appear directly on the portal home page.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -545,10 +548,48 @@ const InitiativeForm = () => {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Short Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Brief description of the initiative..." className="min-h-[100px]" {...field} />
+                      <Textarea placeholder="Brief description shown on listing cards..." className="min-h-[80px]" {...field} />
                     </FormControl>
+                    <FormDescription>Shown on cards in the portal listing view.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="overview"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Overview / Detailed Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Full overview shown on the initiative detail page..." className="min-h-[120px]" {...field} />
+                    </FormControl>
+                    <FormDescription>Shown at the top of the initiative detail page for stakeholders.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || 'active'}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -559,7 +600,7 @@ const InitiativeForm = () => {
                   {(createInitiative.isPending || updateInitiative.isPending) && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {isEditing ? 'Update Sub-Initiative' : 'Create Sub-Initiative'}
+                  {isEditing ? 'Update Initiative' : 'Create Initiative'}
                 </Button>
                 <Button type="button" variant="outline" asChild>
                   <Link to="/admin/initiatives">Cancel</Link>
