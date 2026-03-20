@@ -9,6 +9,7 @@ export type InitiativePartnerProduct = Tables<'initiative_partner_products'> & {
 export type InitiativePartner = Tables<'initiative_partners'> & {
   partner?: Tables<'partners'>;
   initiative_partner_products?: InitiativePartnerProduct[];
+  partner_features?: Tables<'partner_features'>[];
 };
 export type InitiativePartnerInsert = TablesInsert<'initiative_partners'>;
 export type InitiativePartnerUpdate = TablesUpdate<'initiative_partners'>;
