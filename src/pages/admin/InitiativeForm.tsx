@@ -302,6 +302,15 @@ const InitiativeForm = () => {
       notes: f.notes || '',
     }));
     setFeatures(existingFeatures);
+    // Load existing custom commercial fields
+    const existingCustomFields: CustomCommercialField[] = Array.isArray(initiativePartner.custom_commercial_fields)
+      ? (initiativePartner.custom_commercial_fields as any[]).map((f: any) => ({
+          label: f.label || '',
+          value: f.value || '',
+          unit: f.unit || '',
+        }))
+      : [];
+    setCustomCommercialFields(existingCustomFields);
     setPdfUploads([]);
     setEditingPartnerId(initiativePartner.id);
     setShowAddPartner(true);
