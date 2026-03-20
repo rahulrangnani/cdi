@@ -827,6 +827,39 @@ const InitiativeForm = () => {
                           <FormMessage />
                         </FormItem>
                       )} />
+
+                      {/* Custom Commercial Fields */}
+                      <div className="space-y-3 pt-2">
+                        <FormLabel className="text-sm font-medium">Additional Commercial Details</FormLabel>
+                        <p className="text-xs text-muted-foreground">Add any extra commercial fields (e.g., Setup Fee, Support Cost, etc.)</p>
+                        {customCommercialFields.length > 0 && (
+                          <div className="space-y-2">
+                            {customCommercialFields.map((cf, i) => (
+                              <div key={i} className="flex items-center gap-2 p-2 bg-muted/40 rounded-lg text-sm">
+                                <span className="font-medium min-w-[100px]">{cf.label}</span>
+                                <span className="text-muted-foreground">:</span>
+                                <span>{cf.value}</span>
+                                {cf.unit && <span className="text-muted-foreground text-xs">({cf.unit})</span>}
+                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 ml-auto text-destructive" onClick={() => setCustomCommercialFields(prev => prev.filter((_, ii) => ii !== i))}>
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <Input placeholder="Label (e.g., Setup Fee)" value={newCommercialLabel} onChange={(e) => setNewCommercialLabel(e.target.value)} className="flex-1" />
+                          <Input placeholder="Value (e.g., 25000)" value={newCommercialValue} onChange={(e) => setNewCommercialValue(e.target.value)} className="w-32" />
+                          <Input placeholder="Unit (optional)" value={newCommercialUnit} onChange={(e) => setNewCommercialUnit(e.target.value)} className="w-28" />
+                          <Button type="button" variant="outline" onClick={() => {
+                            if (!newCommercialLabel.trim() || !newCommercialValue.trim()) return;
+                            setCustomCommercialFields(prev => [...prev, { label: newCommercialLabel.trim(), value: newCommercialValue.trim(), unit: newCommercialUnit.trim() }]);
+                            setNewCommercialLabel(''); setNewCommercialValue(''); setNewCommercialUnit('');
+                          }}>
+                            <Plus className="h-4 w-4 mr-1" />Add
+                          </Button>
+                        </div>
+                      </div>
                     </div>
 
                     <Separator />
