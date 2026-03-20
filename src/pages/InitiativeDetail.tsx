@@ -265,6 +265,15 @@ const CommercialComparisonTable = ({ initiativePartners }: { initiativePartners:
     { label: 'Billing Contact', key: 'billing_contact', format: (v: any) => v || '—' },
   ];
 
+  // Collect all unique custom commercial field labels across partners
+  const customLabels: string[] = [];
+  initiativePartners.forEach((ip) => {
+    const fields = Array.isArray(ip.custom_commercial_fields) ? ip.custom_commercial_fields : [];
+    fields.forEach((f: any) => {
+      if (f.label && !customLabels.includes(f.label)) customLabels.push(f.label);
+    });
+  });
+
   return (
     <div className="overflow-x-auto rounded-xl border border-border/60 shadow-sm">
       <Table>
