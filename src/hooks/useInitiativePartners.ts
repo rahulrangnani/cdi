@@ -25,7 +25,8 @@ export const useInitiativePartners = (initiativeId: string) => {
           initiative_partner_products (
             *,
             product:products (*)
-          )
+          ),
+          partner_features (*)
         `)
         .eq('initiative_id', initiativeId)
         .order('created_at', { ascending: false });
