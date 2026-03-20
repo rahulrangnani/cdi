@@ -123,6 +123,12 @@ const InitiativeForm = () => {
   const [features, setFeatures] = useState<FeatureRow[]>([]);
   const [newFeatureName, setNewFeatureName] = useState('');
 
+  // Custom commercial fields state
+  const [customCommercialFields, setCustomCommercialFields] = useState<CustomCommercialField[]>([]);
+  const [newCommercialLabel, setNewCommercialLabel] = useState('');
+  const [newCommercialValue, setNewCommercialValue] = useState('');
+  const [newCommercialUnit, setNewCommercialUnit] = useState('');
+
   // PDF state
   const [pdfUploads, setPdfUploads] = useState<PdfUpload[]>([]);
   const [newPdfTitle, setNewPdfTitle] = useState('');
