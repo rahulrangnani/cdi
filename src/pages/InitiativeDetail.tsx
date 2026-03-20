@@ -303,6 +303,20 @@ const CommercialComparisonTable = ({ initiativePartners }: { initiativePartners:
               ))}
             </TableRow>
           ))}
+          {customLabels.map((label, idx) => (
+            <TableRow key={`custom-${label}`} className={(rows.length + idx) % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+              <TableCell className="font-medium text-sm">{label}</TableCell>
+              {initiativePartners.map((ip) => {
+                const fields = Array.isArray(ip.custom_commercial_fields) ? ip.custom_commercial_fields : [];
+                const field = fields.find((f: any) => f.label === label);
+                return (
+                  <TableCell key={ip.id} className="text-center text-sm">
+                    {field ? `${field.value}${field.unit ? ` (${field.unit})` : ''}` : '—'}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>
