@@ -251,9 +251,13 @@ const InitiativeForm = () => {
     setMediaType('video');
     setMediaFile(null);
     setFeatures([]);
+    setCustomCommercialFields([]);
     setPdfUploads([]);
     setNewFeatureName('');
     setNewPdfTitle('');
+    setNewCommercialLabel('');
+    setNewCommercialValue('');
+    setNewCommercialUnit('');
   };
 
   const openAddPartner = () => {
