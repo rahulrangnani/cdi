@@ -16,6 +16,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/initiatives', label: 'Initiatives', icon: Layers },
   { href: '/admin/partners', label: 'Partners', icon: Users },
+  { href: '/admin/access', label: 'Admin Access', icon: ShieldCheck },
 ];
 
 const AdminLayout = () => {

@@ -56,6 +56,7 @@ const App = () => (
               <Route path="partners" element={<PartnersManagement />} />
               <Route path="partners/new" element={<PartnerForm />} />
               <Route path="partners/:id" element={<PartnerForm />} />
+              <Route path="access" element={<AdminAccess />} />
               {/* Products redirect to initiatives */}
               <Route path="products" element={<Navigate to="/admin/initiatives" replace />} />
             </Route>
