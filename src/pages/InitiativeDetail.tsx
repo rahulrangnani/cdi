@@ -265,6 +265,15 @@ const CommercialComparisonTable = ({ initiativePartners }: { initiativePartners:
     { label: 'Billing Contact', key: 'billing_contact', format: (v: any) => v || '—' },
   ];
 
+  // Collect all unique custom commercial field labels across partners
+  const customLabels: string[] = [];
+  initiativePartners.forEach((ip) => {
+    const fields = Array.isArray(ip.custom_commercial_fields) ? ip.custom_commercial_fields : [];
+    fields.forEach((f: any) => {
+      if (f.label && !customLabels.includes(f.label)) customLabels.push(f.label);
+    });
+  });
+
   return (
     <div className="overflow-x-auto rounded-xl border border-border/60 shadow-sm">
       <Table>
@@ -292,6 +301,20 @@ const CommercialComparisonTable = ({ initiativePartners }: { initiativePartners:
                   {row.format((ip as any)[row.key], ip)}
                 </TableCell>
               ))}
+            </TableRow>
+          ))}
+          {customLabels.map((label, idx) => (
+            <TableRow key={`custom-${label}`} className={(rows.length + idx) % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+              <TableCell className="font-medium text-sm">{label}</TableCell>
+              {initiativePartners.map((ip) => {
+                const fields = Array.isArray(ip.custom_commercial_fields) ? ip.custom_commercial_fields : [];
+                const field = fields.find((f: any) => f.label === label);
+                return (
+                  <TableCell key={ip.id} className="text-center text-sm">
+                    {field ? `${field.value}${field.unit ? ` (${field.unit})` : ''}` : '—'}
+                  </TableCell>
+                );
+              })}
             </TableRow>
           ))}
         </TableBody>
@@ -387,6 +410,19 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
                 ))}
               </div>
               {ip.billing_contact && <p className="text-sm"><span className="text-muted-foreground">Billing: </span>{ip.billing_contact}</p>}
+              {/* Custom commercial fields */}
+              {Array.isArray(ip.custom_commercial_fields) && ip.custom_commercial_fields.length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {(ip.custom_commercial_fields as any[]).map((cf: any, idx: number) => (
+                    <div key={idx} className="bg-muted/30 rounded-lg px-3 py-2.5">
+                      <p className="text-xs text-muted-foreground mb-0.5">{cf.label}</p>
+                      <p className="font-bold text-sm">{cf.value}
+                        {cf.unit && <span className="text-xs font-normal text-muted-foreground ml-1">({cf.unit})</span>}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
               {ip.terms_and_conditions && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">Terms & Conditions</p>

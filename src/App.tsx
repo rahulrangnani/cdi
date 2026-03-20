@@ -18,6 +18,7 @@ import InitiativeForm from "./pages/admin/InitiativeForm";
 import CategoryForm from "./pages/admin/CategoryForm";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import PartnerForm from "./pages/admin/PartnerForm";
+import AdminAccess from "./pages/admin/AdminAccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="partners" element={<PartnersManagement />} />
               <Route path="partners/new" element={<PartnerForm />} />
               <Route path="partners/:id" element={<PartnerForm />} />
+              <Route path="access" element={<AdminAccess />} />
               {/* Products redirect to initiatives */}
               <Route path="products" element={<Navigate to="/admin/initiatives" replace />} />
             </Route>

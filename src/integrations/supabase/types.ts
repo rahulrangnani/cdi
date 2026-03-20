@@ -150,6 +150,7 @@ export type Database = {
           billing_contact: string | null
           created_at: string
           currency: string | null
+          custom_commercial_fields: Json | null
           id: string
           initiative_id: string
           integration_cost: number | null
@@ -172,6 +173,7 @@ export type Database = {
           billing_contact?: string | null
           created_at?: string
           currency?: string | null
+          custom_commercial_fields?: Json | null
           id?: string
           initiative_id: string
           integration_cost?: number | null
@@ -194,6 +196,7 @@ export type Database = {
           billing_contact?: string | null
           created_at?: string
           currency?: string | null
+          custom_commercial_fields?: Json | null
           id?: string
           initiative_id?: string
           integration_cost?: number | null
