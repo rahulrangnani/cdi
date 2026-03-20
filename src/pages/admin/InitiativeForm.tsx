@@ -93,6 +93,12 @@ interface FeatureRow {
   notes: string;
 }
 
+interface CustomCommercialField {
+  label: string;
+  value: string;
+  unit: string;
+}
+
 interface PdfUpload {
   title: string;
   file: File;
