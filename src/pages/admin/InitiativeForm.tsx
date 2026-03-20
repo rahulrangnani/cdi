@@ -427,6 +427,7 @@ const InitiativeForm = () => {
         media_title: data.media_title || null,
         media_url: mediaUrl,
         media_description: data.media_description || null,
+        custom_commercial_fields: customCommercialFields.length > 0 ? customCommercialFields : [],
       } as any;
 
       let initiativePartnerId = editingPartnerId;

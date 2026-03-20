@@ -51,7 +51,8 @@ export const useInitiativePartner = (id: string) => {
           initiative_partner_products (
             *,
             product:products (*)
-          )
+          ),
+          partner_features (*)
         `)
         .eq('id', id)
         .single();
