@@ -18,6 +18,7 @@ import InitiativeForm from "./pages/admin/InitiativeForm";
 import CategoryForm from "./pages/admin/CategoryForm";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import PartnerForm from "./pages/admin/PartnerForm";
+import AdminAccess from "./pages/admin/AdminAccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
