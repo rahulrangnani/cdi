@@ -517,10 +517,9 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ip.support_details.known_issues}</p>
                     </div>
                   )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No support details available.</p>
-              )}
+                  </>
+                ) : null}
+              </div>
             </TabsContent>
           </div>
         </Tabs>
