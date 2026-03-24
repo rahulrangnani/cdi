@@ -482,8 +482,19 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
             </TabsContent>
 
             <TabsContent value="support" className="mt-0">
-              {ip.support_details ? (
-                <div className="space-y-4">
+              <div className="space-y-4">
+                {(ip.partner?.contact_name || ip.partner?.contact_email || ip.partner?.contact_phone) && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Primary Contact</p>
+                    <div className="text-sm space-y-0.5">
+                      {ip.partner?.contact_name && <p className="font-medium">{ip.partner.contact_name}</p>}
+                      {ip.partner?.contact_email && <p className="text-muted-foreground">{ip.partner.contact_email}</p>}
+                      {ip.partner?.contact_phone && <p className="text-muted-foreground">{ip.partner.contact_phone}</p>}
+                    </div>
+                  </div>
+                )}
+                {ip.support_details ? (
+                  <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Production Contact</p>
@@ -506,10 +517,9 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ip.support_details.known_issues}</p>
                     </div>
                   )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No support details available.</p>
-              )}
+                  </>
+                ) : null}
+              </div>
             </TabsContent>
           </div>
         </Tabs>
