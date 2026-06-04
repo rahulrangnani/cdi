@@ -51,7 +51,9 @@ const SubInitiativeList = ({
 
       {subs && subs.length > 0 ? (
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-          {subs.map((sub) => (
+          {[...subs]
+            .sort((a, b) => (b.initiative_partners?.length || 0) - (a.initiative_partners?.length || 0))
+            .map((sub) => (
             <Link key={sub.id} to={`/initiatives/${sub.id}`} className="flex">
               <div className="group relative bg-card border border-border/60 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col w-full">
                 {/* Colored left accent bar */}
