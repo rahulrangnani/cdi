@@ -312,15 +312,20 @@ const PortalGrid = ({
   // - Has direct partners → treat as standalone (go directly to detail)
   // This gives the best UX without extra queries.
 
+  // Items with partners first, items without partners at the bottom
+  const sortedItems = [...items].sort((a, b) => {
+    const aHas = (a.initiative_partners?.length || 0) > 0 ? 1 : 0;
+    const bHas = (b.initiative_partners?.length || 0) > 0 ? 1 : 0;
+    return bHas - aHas;
+  });
+
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-      {items.map((item) => {
+      {sortedItems.map((item) => {
         const hasDirectPartners = (item.initiative_partners?.length || 0) > 0;
         if (hasDirectPartners) {
-          // Standalone initiative — click goes to detail page
           return <InitiativeCard key={item.id} initiative={item} />;
         } else {
-          // Likely a main category — click drills into sub-initiatives
           return (
             <CategoryCard
               key={item.id}

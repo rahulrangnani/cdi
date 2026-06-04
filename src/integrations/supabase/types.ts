@@ -146,6 +146,8 @@ export type Database = {
           annual_cost: number | null
           api_documentation: string | null
           api_notes: string | null
+          api_request_sample: string | null
+          api_response_sample: string | null
           api_version: string | null
           billing_contact: string | null
           created_at: string
@@ -159,16 +161,21 @@ export type Database = {
           media_type: string | null
           media_url: string | null
           partner_id: string
+          partner_rank: number | null
           pricing_per_call: number | null
           pricing_unit: string | null
+          production_api_key: string | null
           sla_percentage: number | null
           terms_and_conditions: string | null
+          uat_api_key: string | null
           updated_at: string
         }
         Insert: {
           annual_cost?: number | null
           api_documentation?: string | null
           api_notes?: string | null
+          api_request_sample?: string | null
+          api_response_sample?: string | null
           api_version?: string | null
           billing_contact?: string | null
           created_at?: string
@@ -182,16 +189,21 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           partner_id: string
+          partner_rank?: number | null
           pricing_per_call?: number | null
           pricing_unit?: string | null
+          production_api_key?: string | null
           sla_percentage?: number | null
           terms_and_conditions?: string | null
+          uat_api_key?: string | null
           updated_at?: string
         }
         Update: {
           annual_cost?: number | null
           api_documentation?: string | null
           api_notes?: string | null
+          api_request_sample?: string | null
+          api_response_sample?: string | null
           api_version?: string | null
           billing_contact?: string | null
           created_at?: string
@@ -205,10 +217,13 @@ export type Database = {
           media_type?: string | null
           media_url?: string | null
           partner_id?: string
+          partner_rank?: number | null
           pricing_per_call?: number | null
           pricing_unit?: string | null
+          production_api_key?: string | null
           sla_percentage?: number | null
           terms_and_conditions?: string | null
+          uat_api_key?: string | null
           updated_at?: string
         }
         Relationships: [

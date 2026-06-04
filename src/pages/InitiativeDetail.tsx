@@ -361,7 +361,19 @@ const PartnerComparison = ({ initiativePartners }: { initiativePartners: any[] }
 
 // ─── Partner Card ─────────────────────────────────────────────────────────────
 
+const rankLabel = (rank: number | null | undefined): string | null => {
+  if (!rank) return null;
+  if (rank === 1) return 'Primary';
+  if (rank === 2) return 'Secondary';
+  if (rank === 3) return 'Tertiary';
+  if (rank === 4) return 'Quaternary';
+  return `#${rank}`;
+};
+
 const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | null; onCopy: (text: string, id: string) => void }) => {
+  const priority = rankLabel(ip.partner_rank);
+  const hasApiKeys = !!(ip.uat_api_key || ip.production_api_key);
+  const hasReqRes = !!(ip.api_request_sample || ip.api_response_sample);
   return (
     <Card className="border border-border/60 shadow-sm overflow-hidden">
       {/* Partner header */}
@@ -374,7 +386,14 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
           </div>
         )}
         <div className="flex-1">
-          <h3 className="font-bold text-base">{ip.partner?.name}</h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-bold text-base">{ip.partner?.name}</h3>
+            {priority && (
+              <Badge className={ip.partner_rank === 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}>
+                {priority}
+              </Badge>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             {ip.pricing_per_call ? `${ip.currency === 'USD' ? '$' : ip.currency === 'EUR' ? '€' : '₹'}${ip.pricing_per_call} / ${ip.pricing_unit || 'call'}` : 'Pricing on request'}
           </p>
@@ -385,9 +404,11 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
       {/* Tabs */}
       <CardContent className="p-0">
         <Tabs defaultValue="commercial" className="w-full">
-          <TabsList className="w-full rounded-none border-b border-border/50 bg-muted/10 h-10 justify-start px-4 gap-1">
+          <TabsList className="w-full rounded-none border-b border-border/50 bg-muted/10 h-auto flex-wrap justify-start px-4 gap-1 py-1">
             <TabsTrigger value="commercial" className="text-xs h-8 data-[state=active]:bg-background">Commercial</TabsTrigger>
             <TabsTrigger value="api" className="text-xs h-8 data-[state=active]:bg-background">API Docs</TabsTrigger>
+            {hasApiKeys && <TabsTrigger value="api-keys" className="text-xs h-8 data-[state=active]:bg-background">API Keys</TabsTrigger>}
+            {hasReqRes && <TabsTrigger value="req-res" className="text-xs h-8 data-[state=active]:bg-background">Request / Response</TabsTrigger>}
             <TabsTrigger value="media" className="text-xs h-8 data-[state=active]:bg-background">Media</TabsTrigger>
             <TabsTrigger value="products" className="text-xs h-8 data-[state=active]:bg-background">Products</TabsTrigger>
             <TabsTrigger value="support" className="text-xs h-8 data-[state=active]:bg-background">Support</TabsTrigger>
@@ -434,6 +455,61 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
             <TabsContent value="api" className="mt-0">
               <ApiTabContent ip={ip} copiedId={copiedId} onCopy={onCopy} />
             </TabsContent>
+
+            {hasApiKeys && (
+              <TabsContent value="api-keys" className="mt-0 space-y-3">
+                {ip.uat_api_key && (
+                  <div className="p-3 bg-muted/30 rounded-lg space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">UAT API Key</p>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(ip.uat_api_key, `uat-${ip.id}`)}>
+                        {copiedId === `uat-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                    <p className="text-sm font-mono break-all">{ip.uat_api_key}</p>
+                  </div>
+                )}
+                {ip.production_api_key && (
+                  <div className="p-3 bg-muted/30 rounded-lg space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Production API Key</p>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(ip.production_api_key, `prod-${ip.id}`)}>
+                        {copiedId === `prod-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                    <p className="text-sm font-mono break-all">{ip.production_api_key}</p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
+
+            {hasReqRes && (
+              <TabsContent value="req-res" className="mt-0 space-y-4">
+                {ip.api_request_sample && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sample Request</p>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(ip.api_request_sample, `req-${ip.id}`)}>
+                        {copiedId === `req-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                    <pre className="text-xs font-mono bg-muted/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">{ip.api_request_sample}</pre>
+                  </div>
+                )}
+                {ip.api_response_sample && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sample Response</p>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(ip.api_response_sample, `res-${ip.id}`)}>
+                        {copiedId === `res-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                    <pre className="text-xs font-mono bg-muted/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">{ip.api_response_sample}</pre>
+                  </div>
+                )}
+              </TabsContent>
+            )}
+
 
             <TabsContent value="media" className="mt-0">
               {ip.media_url ? (
@@ -556,7 +632,11 @@ const InitiativeDetail = () => {
     </div>
   );
 
-  const partners = initiative.initiative_partners || [];
+  const partners = [...(initiative.initiative_partners || [])].sort((a: any, b: any) => {
+    const ra = a.partner_rank ?? Number.POSITIVE_INFINITY;
+    const rb = b.partner_rank ?? Number.POSITIVE_INFINITY;
+    return ra - rb;
+  });
 
   return (
     <div className="space-y-8">

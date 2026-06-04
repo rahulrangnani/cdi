@@ -78,6 +78,11 @@ const partnerDetailsSchema = z.object({
   api_version: z.string().optional(),
   api_documentation: z.string().optional(),
   api_notes: z.string().optional(),
+  uat_api_key: z.string().optional(),
+  production_api_key: z.string().optional(),
+  api_request_sample: z.string().optional(),
+  api_response_sample: z.string().optional(),
+  partner_rank: z.string().optional(),
   media_source_type: z.enum(['link', 'upload']).optional(),
   media_type: z.enum(['video', 'audio', 'document']).optional(),
   media_title: z.string().optional(),
@@ -173,6 +178,11 @@ const InitiativeForm = () => {
       api_version: '1.0',
       api_documentation: '',
       api_notes: '',
+      uat_api_key: '',
+      production_api_key: '',
+      api_request_sample: '',
+      api_response_sample: '',
+      partner_rank: '',
       media_source_type: 'link',
       media_type: 'video',
       media_title: '',
@@ -240,6 +250,11 @@ const InitiativeForm = () => {
       api_version: '1.0',
       api_documentation: '',
       api_notes: '',
+      uat_api_key: '',
+      production_api_key: '',
+      api_request_sample: '',
+      api_response_sample: '',
+      partner_rank: '',
       media_source_type: 'link',
       media_type: 'video',
       media_title: '',
@@ -286,6 +301,11 @@ const InitiativeForm = () => {
       api_version: initiativePartner.api_version || '1.0',
       api_documentation: initiativePartner.api_documentation || '',
       api_notes: (initiativePartner as any).api_notes || '',
+      uat_api_key: (initiativePartner as any).uat_api_key || '',
+      production_api_key: (initiativePartner as any).production_api_key || '',
+      api_request_sample: (initiativePartner as any).api_request_sample || '',
+      api_response_sample: (initiativePartner as any).api_response_sample || '',
+      partner_rank: (initiativePartner as any).partner_rank ? String((initiativePartner as any).partner_rank) : '',
       media_source_type: sourceType,
       media_type: initiativePartner.media_type || 'video',
       media_title: initiativePartner.media_title || '',
@@ -423,6 +443,11 @@ const InitiativeForm = () => {
         api_version: data.api_version || null,
         api_documentation: data.api_documentation || null,
         api_notes: data.api_notes || null,
+        uat_api_key: data.uat_api_key?.trim() || null,
+        production_api_key: data.production_api_key?.trim() || null,
+        api_request_sample: data.api_request_sample?.trim() || null,
+        api_response_sample: data.api_response_sample?.trim() || null,
+        partner_rank: data.partner_rank ? parseInt(data.partner_rank, 10) : null,
         media_type: mediaType,
         media_title: data.media_title || null,
         media_url: mediaUrl,
@@ -687,6 +712,37 @@ const InitiativeForm = () => {
                               ))}
                             </SelectContent>
                           </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Partner Rank / Priority */}
+                    <FormField
+                      control={partnerForm.control}
+                      name="partner_rank"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Partner Priority <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>
+                          <Select
+                            onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)}
+                            value={field.value || '__none__'}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="No priority set" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="__none__">— Not set —</SelectItem>
+                              <SelectItem value="1">Primary (1)</SelectItem>
+                              <SelectItem value="2">Secondary (2)</SelectItem>
+                              <SelectItem value="3">Tertiary (3)</SelectItem>
+                              <SelectItem value="4">Quaternary (4)</SelectItem>
+                              <SelectItem value="5">5</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>Determines the display order on the user-facing page (Primary first).</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1004,6 +1060,66 @@ const InitiativeForm = () => {
                           </Button>
                         </div>
                       </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* API Keys (Optional) */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <FileCode className="h-4 w-4" />
+                        API Keys <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        These keys will only be displayed on the user-facing page if filled in.
+                      </p>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <FormField control={partnerForm.control} name="uat_api_key" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>UAT API Key</FormLabel>
+                            <FormControl><Input placeholder="UAT / Sandbox key" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={partnerForm.control} name="production_api_key" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Production API Key</FormLabel>
+                            <FormControl><Input placeholder="Production key" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* API Request / Response Samples (Optional) */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <FileCode className="h-4 w-4" />
+                        API Request & Response <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Paste sample API request and response payloads. Shown on the user page only if filled in.
+                      </p>
+                      <FormField control={partnerForm.control} name="api_request_sample" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sample Request</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder='e.g., {"name":"John","pan":"ABCDE1234F"}' className="min-h-[120px] font-mono text-xs" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={partnerForm.control} name="api_response_sample" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sample Response</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder='e.g., {"status":"success","data":{...}}' className="min-h-[120px] font-mono text-xs" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
                     </div>
 
                     <Separator />
