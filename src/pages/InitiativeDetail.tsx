@@ -456,6 +456,61 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
               <ApiTabContent ip={ip} copiedId={copiedId} onCopy={onCopy} />
             </TabsContent>
 
+            {hasApiKeys && (
+              <TabsContent value="api-keys" className="mt-0 space-y-3">
+                {ip.uat_api_key && (
+                  <div className="p-3 bg-muted/30 rounded-lg space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">UAT API Key</p>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(ip.uat_api_key, `uat-${ip.id}`)}>
+                        {copiedId === `uat-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                    <p className="text-sm font-mono break-all">{ip.uat_api_key}</p>
+                  </div>
+                )}
+                {ip.production_api_key && (
+                  <div className="p-3 bg-muted/30 rounded-lg space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Production API Key</p>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(ip.production_api_key, `prod-${ip.id}`)}>
+                        {copiedId === `prod-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                    <p className="text-sm font-mono break-all">{ip.production_api_key}</p>
+                  </div>
+                )}
+              </TabsContent>
+            )}
+
+            {hasReqRes && (
+              <TabsContent value="req-res" className="mt-0 space-y-4">
+                {ip.api_request_sample && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sample Request</p>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(ip.api_request_sample, `req-${ip.id}`)}>
+                        {copiedId === `req-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                    <pre className="text-xs font-mono bg-muted/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">{ip.api_request_sample}</pre>
+                  </div>
+                )}
+                {ip.api_response_sample && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sample Response</p>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onCopy(ip.api_response_sample, `res-${ip.id}`)}>
+                        {copiedId === `res-${ip.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      </Button>
+                    </div>
+                    <pre className="text-xs font-mono bg-muted/40 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-words">{ip.api_response_sample}</pre>
+                  </div>
+                )}
+              </TabsContent>
+            )}
+
+
             <TabsContent value="media" className="mt-0">
               {ip.media_url ? (
                 <div className="space-y-3">
