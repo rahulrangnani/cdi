@@ -1064,6 +1064,66 @@ const InitiativeForm = () => {
 
                     <Separator />
 
+                    {/* API Keys (Optional) */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <FileCode className="h-4 w-4" />
+                        API Keys <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        These keys will only be displayed on the user-facing page if filled in.
+                      </p>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <FormField control={partnerForm.control} name="uat_api_key" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>UAT API Key</FormLabel>
+                            <FormControl><Input placeholder="UAT / Sandbox key" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                        <FormField control={partnerForm.control} name="production_api_key" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Production API Key</FormLabel>
+                            <FormControl><Input placeholder="Production key" {...field} /></FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* API Request / Response Samples (Optional) */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <FileCode className="h-4 w-4" />
+                        API Request & Response <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Paste sample API request and response payloads. Shown on the user page only if filled in.
+                      </p>
+                      <FormField control={partnerForm.control} name="api_request_sample" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sample Request</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder='e.g., {"name":"John","pan":"ABCDE1234F"}' className="min-h-[120px] font-mono text-xs" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={partnerForm.control} name="api_response_sample" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sample Response</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder='e.g., {"status":"success","data":{...}}' className="min-h-[120px] font-mono text-xs" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+
+                    <Separator />
+
                     {/* Media Section */}
                     <div className="space-y-4">
                       <h4 className="font-medium flex items-center gap-2">
