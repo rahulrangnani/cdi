@@ -717,6 +717,37 @@ const InitiativeForm = () => {
                       )}
                     />
 
+                    {/* Partner Rank / Priority */}
+                    <FormField
+                      control={partnerForm.control}
+                      name="partner_rank"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Partner Priority <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>
+                          <Select
+                            onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)}
+                            value={field.value || '__none__'}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="No priority set" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="__none__">— Not set —</SelectItem>
+                              <SelectItem value="1">Primary (1)</SelectItem>
+                              <SelectItem value="2">Secondary (2)</SelectItem>
+                              <SelectItem value="3">Tertiary (3)</SelectItem>
+                              <SelectItem value="4">Quaternary (4)</SelectItem>
+                              <SelectItem value="5">5</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>Determines the display order on the user-facing page (Primary first).</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
                     {/* Partner Logo URL */}
                     <FormField
                       control={partnerForm.control}
