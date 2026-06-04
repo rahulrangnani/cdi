@@ -632,7 +632,11 @@ const InitiativeDetail = () => {
     </div>
   );
 
-  const partners = initiative.initiative_partners || [];
+  const partners = [...(initiative.initiative_partners || [])].sort((a: any, b: any) => {
+    const ra = a.partner_rank ?? Number.POSITIVE_INFINITY;
+    const rb = b.partner_rank ?? Number.POSITIVE_INFINITY;
+    return ra - rb;
+  });
 
   return (
     <div className="space-y-8">
