@@ -261,7 +261,7 @@ const CommercialComparisonTable = ({ initiativePartners }: { initiativePartners:
   const rows = [
     { label: 'Integration Cost', key: 'integration_cost', format: (v: any, ip: any) => v ? formatCurrency(v, ip.currency) : '—' },
     { label: 'Annual Cost', key: 'annual_cost', format: (v: any, ip: any) => v ? formatCurrency(v, ip.currency) : '—' },
-    { label: 'Price Per Call', key: 'pricing_per_call', format: (v: any, ip: any) => v ? `${formatCurrency(v, ip.currency)} / ${ip.pricing_unit || 'call'}` : '—' },
+    { label: 'Price', key: 'pricing_per_call', format: (v: any, ip: any) => v ? `${formatCurrency(v, ip.currency)} / ${ip.pricing_unit || 'call'}` : '—' },
     { label: 'Billing Contact', key: 'billing_contact', format: (v: any) => v || '—' },
   ];
 
@@ -418,7 +418,7 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
             <TabsContent value="commercial" className="mt-0 space-y-4">
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
-                  { label: 'Price Per Call', value: ip.pricing_per_call ? formatCurrency(ip.pricing_per_call, ip.currency) : 'N/A', sub: ip.pricing_unit },
+                  { label: 'Price', value: ip.pricing_per_call ? formatCurrency(ip.pricing_per_call, ip.currency) : 'N/A', sub: ip.pricing_unit },
                   { label: 'Integration Cost', value: ip.integration_cost ? formatCurrency(ip.integration_cost, ip.currency) : 'N/A' },
                   { label: 'Annual Cost', value: ip.annual_cost ? formatCurrency(ip.annual_cost, ip.currency) : 'N/A' },
                 ].map((item) => (

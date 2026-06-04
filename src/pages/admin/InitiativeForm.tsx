@@ -815,7 +815,7 @@ const InitiativeForm = () => {
                         )} />
                         <FormField control={partnerForm.control} name="pricing_per_call" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Price Per Call (₹)</FormLabel>
+                            <FormLabel>Price (₹)</FormLabel>
                             <FormControl><Input type="number" step="0.01" placeholder="e.g., 2.50" {...field} /></FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1267,7 +1267,7 @@ const InitiativeForm = () => {
                     <AccordionContent>
                       <div className="space-y-4 pt-2 pl-2">
                         <div className="grid gap-4 md:grid-cols-3 text-sm">
-                          <div><p className="text-muted-foreground">Price Per Call</p><p className="font-medium">{ip.pricing_per_call ? `₹${ip.pricing_per_call}` : '-'}</p></div>
+                          <div><p className="text-muted-foreground">Price</p><p className="font-medium">{ip.pricing_per_call ? `₹${ip.pricing_per_call}` : '-'}</p></div>
                           <div><p className="text-muted-foreground">API Version</p><p className="font-medium">{ip.api_version || '-'}</p></div>
                           <div><p className="text-muted-foreground">Billing Contact</p><p className="font-medium">{ip.billing_contact || '-'}</p></div>
                         </div>
