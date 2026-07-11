@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useInitiatives, useDeleteInitiative } from '@/hooks/useInitiatives';
+import { useInitiatives, useBuckets, useDeleteInitiative } from '@/hooks/useInitiatives';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +32,7 @@ import {
   Layers,
   ChevronRight,
   Building2,
+  Package,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -39,26 +40,27 @@ const InitiativesManagement = () => {
   const [search, setSearch] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // Fetch all initiatives (no filter) for admin view
-  const { data: allInitiatives, isLoading } = useInitiatives({ search });
+  const { data: buckets } = useBuckets();
+  const { data: categories, isLoading: catLoading } = useInitiatives({ search, level: 'category' });
+  const { data: subs, isLoading: subLoading } = useInitiatives({ level: 'initiative' });
+  const isLoading = catLoading || subLoading;
+
   const deleteInitiative = useDeleteInitiative();
   const { toast } = useToast();
 
-  // Separate:
-  // - Sub-initiatives: have a parent_id
-  // - Main categories: no parent_id AND no direct partners (they serve as folder/drill-down)
-  // - Standalone initiatives: no parent_id AND have direct partners (shown directly on portal)
-  const subInitiatives = allInitiatives?.filter((i) => !!i.parent_id) ?? [];
-  const topLevel = allInitiatives?.filter((i) => !i.parent_id) ?? [];
-  const mainCategories = topLevel.filter((i) => (i.initiative_partners?.length || 0) === 0);
-  const standaloneInitiatives = topLevel.filter((i) => (i.initiative_partners?.length || 0) > 0);
-
-  // Group sub-initiatives by parent_id
-  const subsByParent: Record<string, typeof subInitiatives> = {};
-  subInitiatives.forEach((sub) => {
-    const pid = (sub as any).parent_id as string;
+  const subsByParent: Record<string, any[]> = {};
+  (subs || []).forEach((sub: any) => {
+    const pid = sub.parent_id;
+    if (!pid) return;
     if (!subsByParent[pid]) subsByParent[pid] = [];
     subsByParent[pid].push(sub);
+  });
+
+  const categoriesByBucket: Record<string, any[]> = {};
+  (categories || []).forEach((cat: any) => {
+    const bid = cat.parent_id || '__none__';
+    if (!categoriesByBucket[bid]) categoriesByBucket[bid] = [];
+    categoriesByBucket[bid].push(cat);
   });
 
   const handleDelete = async () => {
@@ -75,12 +77,11 @@ const InitiativesManagement = () => {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Initiatives</h1>
           <p className="text-muted-foreground mt-1">
-            Manage main categories and their initiatives
+            Bucket → Main Category → Initiative
           </p>
         </div>
         <div className="flex gap-3">
@@ -99,11 +100,10 @@ const InitiativesManagement = () => {
         </div>
       </div>
 
-      {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search initiatives..."
+          placeholder="Search categories..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10"
@@ -114,49 +114,47 @@ const InitiativesManagement = () => {
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+      ) : !buckets || buckets.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border rounded-xl text-center">
+          <Package className="h-12 w-12 text-muted-foreground mb-3" />
+          <p className="text-lg font-medium text-muted-foreground">No buckets yet</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">
+            Create a bucket first, then add main categories under it.
+          </p>
+          <Button asChild>
+            <Link to="/admin/buckets/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Bucket
+            </Link>
+          </Button>
+        </div>
       ) : (
-        <div className="space-y-6">
-          {mainCategories.length === 0 && standaloneInitiatives.length === 0 && subInitiatives.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border rounded-xl text-center">
-              <Layers className="h-12 w-12 text-muted-foreground mb-3" />
-              <p className="text-lg font-medium text-muted-foreground">No initiatives yet</p>
-              <p className="text-sm text-muted-foreground mt-1 mb-4">
-                Start by creating a Main Category (e.g., KYC, Voice Bots) or a standalone Initiative
-              </p>
-              <div className="flex gap-3">
-                <Button asChild variant="outline">
-                  <Link to="/admin/categories/new">
-                    <FolderOpen className="mr-2 h-4 w-4" />
-                    Add Main Category
-                  </Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/admin/initiatives/new">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Initiative
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Main Categories Section */}
-              {mainCategories.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-2 mb-3">
-                    <FolderOpen className="h-4 w-4 text-primary" />
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                      Main Categories
-                    </h2>
-                    <Badge variant="secondary" className="text-xs">{mainCategories.length}</Badge>
-                  </div>
+        <div className="space-y-8">
+          {buckets.map((bucket: any) => {
+            const bucketCategories = categoriesByBucket[bucket.id] || [];
+            return (
+              <section key={bucket.id}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                    {bucket.name}
+                  </h2>
+                  <Badge variant="secondary" className="text-xs">{bucketCategories.length}</Badge>
+                </div>
 
+                {bucketCategories.length === 0 ? (
+                  <div className="border border-dashed border-border/60 rounded-lg py-6 px-5 text-sm text-muted-foreground">
+                    No main categories under this bucket.{' '}
+                    <Link to="/admin/categories/new" className="text-primary hover:underline font-medium">
+                      Add one →
+                    </Link>
+                  </div>
+                ) : (
                   <div className="space-y-4">
-                    {mainCategories.map((category) => {
-                      const subs = subsByParent[category.id] ?? [];
+                    {bucketCategories.map((category: any) => {
+                      const catSubs = subsByParent[category.id] ?? [];
                       return (
                         <Card key={category.id} className="border border-border/60">
-                          {/* Category header row */}
                           <CardHeader className="pb-3 pt-4 px-5">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3 min-w-0">
@@ -164,7 +162,7 @@ const InitiativesManagement = () => {
                                   <FolderOpen className="h-4 w-4 text-primary" />
                                 </div>
                                 <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-semibold text-base text-foreground truncate">
                                       {category.name}
                                     </span>
@@ -187,7 +185,7 @@ const InitiativesManagement = () => {
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
                                 <span className="text-xs text-muted-foreground">
-                                  {subs.length} initiative{subs.length !== 1 ? 's' : ''}
+                                  {catSubs.length} initiative{catSubs.length !== 1 ? 's' : ''}
                                 </span>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -215,11 +213,10 @@ const InitiativesManagement = () => {
                             </div>
                           </CardHeader>
 
-                          {/* Sub-initiatives under this category */}
-                          {subs.length > 0 && (
+                          {catSubs.length > 0 ? (
                             <CardContent className="pt-0 pb-3 px-5">
                               <div className="border-t border-border/50 pt-3 space-y-2">
-                                {subs.map((sub) => (
+                                {catSubs.map((sub: any) => (
                                   <div
                                     key={sub.id}
                                     className="flex items-center justify-between pl-6 pr-2 py-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors group"
@@ -278,10 +275,7 @@ const InitiativesManagement = () => {
                                 ))}
                               </div>
                             </CardContent>
-                          )}
-
-                          {/* Empty state for category with no initiatives */}
-                          {subs.length === 0 && (
+                          ) : (
                             <CardContent className="pt-0 pb-4 px-5">
                               <div className="border-t border-border/50 pt-3">
                                 <div className="pl-6 flex items-center gap-2 text-sm text-muted-foreground">
@@ -300,72 +294,10 @@ const InitiativesManagement = () => {
                       );
                     })}
                   </div>
-                </section>
-              )}
-
-              {/* Standalone initiatives (have direct partners, no parent category) */}
-              {standaloneInitiatives.length > 0 && (
-                <section>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Layers className="h-4 w-4 text-primary" />
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                      Standalone Initiatives
-                    </h2>
-                    <Badge variant="secondary" className="text-xs">{standaloneInitiatives.length}</Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {standaloneInitiatives.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between px-4 py-3 rounded-lg border border-border/60 bg-card hover:border-primary/30 transition-colors group"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Layers className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <div className="min-w-0">
-                            <span className="font-medium text-sm truncate block">{item.name}</span>
-                            {item.description && (
-                              <span className="text-xs text-muted-foreground truncate block">{item.description}</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Building2 className="h-3.5 w-3.5" />
-                            <span>{item.initiative_partners?.length || 0} partner{(item.initiative_partners?.length || 0) !== 1 ? 's' : ''}</span>
-                          </div>
-                          <Badge variant={item.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                            {item.status}
-                          </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link to={`/admin/initiatives/${item.id}`}>
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  Edit & Manage Partners
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() => setDeleteId(item.id)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </>
-          )}
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
 
