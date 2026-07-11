@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useBuckets, useCategoriesByBucket, useSubInitiatives } from '@/hooks/useInitiatives';
 import { useProducts } from '@/hooks/useProducts';
 import { useProductScopedTree } from '@/hooks/useProductScopedTree';
@@ -11,6 +11,22 @@ import { Search, Users, ArrowRight, Loader2, ChevronRight, Layers, ArrowLeft, Fo
 
 type Crumb = { id: string; name: string };
 type ViewMode = 'journey' | 'product';
+
+const getCrumbFromParams = (params: URLSearchParams, idKey: string, nameKey: string): Crumb | null => {
+  const id = params.get(idKey);
+  const name = params.get(nameKey);
+  return id && name ? { id, name } : null;
+};
+
+const setCrumbInParams = (params: URLSearchParams, idKey: string, nameKey: string, crumb: Crumb) => {
+  params.set(idKey, crumb.id);
+  params.set(nameKey, crumb.name);
+};
+
+const clearCrumbFromParams = (params: URLSearchParams, idKey: string, nameKey: string) => {
+  params.delete(idKey);
+  params.delete(nameKey);
+};
 
 // ─── Level 3: sub-initiatives inside a category ─────────────────────────────
 const SubInitiativeList = ({
@@ -370,26 +386,75 @@ const JourneyBuckets = ({
 
 // ─── Main ───────────────────────────────────────────────────────────────────
 const Index = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('journey');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedProduct, setSelectedProduct] = useState<Crumb | null>(null);
-  const [selectedBucket, setSelectedBucket] = useState<Crumb | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Crumb | null>(null);
+
+  const viewMode: ViewMode = searchParams.get('view') === 'product' ? 'product' : 'journey';
+  const selectedProduct = viewMode === 'product' ? getCrumbFromParams(searchParams, 'product', 'productName') : null;
+  const selectedBucket = getCrumbFromParams(searchParams, 'bucket', 'bucketName');
+  const selectedCategory = selectedBucket ? getCrumbFromParams(searchParams, 'category', 'categoryName') : null;
 
   const { data: scopedTree } = useProductScopedTree(
     viewMode === 'product' ? selectedProduct?.id : null
   );
 
+  const updateParams = (updater: (next: URLSearchParams) => void) => {
+    const next = new URLSearchParams(searchParams);
+    updater(next);
+    setSearchParams(next);
+  };
+
   const resetDrill = () => {
-    setSelectedBucket(null);
-    setSelectedCategory(null);
+    updateParams((next) => {
+      clearCrumbFromParams(next, 'bucket', 'bucketName');
+      clearCrumbFromParams(next, 'category', 'categoryName');
+    });
   };
 
   const handleModeChange = (mode: string) => {
-    setViewMode(mode as ViewMode);
-    setSelectedProduct(null);
-    resetDrill();
+    updateParams((next) => {
+      next.set('view', mode as ViewMode);
+      clearCrumbFromParams(next, 'product', 'productName');
+      clearCrumbFromParams(next, 'bucket', 'bucketName');
+      clearCrumbFromParams(next, 'category', 'categoryName');
+    });
+  };
+
+  const selectProduct = (product: Crumb) => {
+    updateParams((next) => {
+      next.set('view', 'product');
+      setCrumbInParams(next, 'product', 'productName', product);
+      clearCrumbFromParams(next, 'bucket', 'bucketName');
+      clearCrumbFromParams(next, 'category', 'categoryName');
+    });
+  };
+
+  const clearProductFilter = () => {
+    updateParams((next) => {
+      clearCrumbFromParams(next, 'product', 'productName');
+      clearCrumbFromParams(next, 'bucket', 'bucketName');
+      clearCrumbFromParams(next, 'category', 'categoryName');
+    });
+  };
+
+  const selectBucket = (bucket: Crumb) => {
+    updateParams((next) => {
+      setCrumbInParams(next, 'bucket', 'bucketName', bucket);
+      clearCrumbFromParams(next, 'category', 'categoryName');
+    });
+  };
+
+  const selectCategory = (category: Crumb) => {
+    updateParams((next) => {
+      setCrumbInParams(next, 'category', 'categoryName', category);
+    });
+  };
+
+  const backToCategories = () => {
+    updateParams((next) => {
+      clearCrumbFromParams(next, 'category', 'categoryName');
+    });
   };
 
   // ── Product view, step 1: pick a product
@@ -397,7 +462,7 @@ const Index = () => {
     return (
       <div className="space-y-6">
         <ViewToggle mode={viewMode} onChange={handleModeChange} />
-        <ProductPicker onSelect={(p) => setSelectedProduct(p)} />
+        <ProductPicker onSelect={selectProduct} />
       </div>
     );
   }
@@ -408,7 +473,7 @@ const Index = () => {
         <Box className="h-3.5 w-3.5" />
         Product: <span className="font-semibold">{selectedProduct.name}</span>
         <button
-          onClick={() => { setSelectedProduct(null); resetDrill(); }}
+          onClick={clearProductFilter}
           className="ml-1 hover:text-foreground transition-colors"
           aria-label="Clear product filter"
         >
@@ -428,7 +493,7 @@ const Index = () => {
           category={selectedCategory}
           bucket={selectedBucket}
           onBackToBuckets={resetDrill}
-          onBackToCategories={() => setSelectedCategory(null)}
+          onBackToCategories={backToCategories}
           allowedInitiativeIds={viewMode === 'product' ? scopedTree?.initiativeIds : undefined}
           productQuery={viewMode === 'product' ? selectedProduct?.id : undefined}
         />
@@ -445,7 +510,7 @@ const Index = () => {
         <CategoryList
           bucket={selectedBucket}
           onBack={resetDrill}
-          onCategoryClick={(c) => setSelectedCategory(c)}
+          onCategoryClick={selectCategory}
           allowedCategoryIds={viewMode === 'product' ? scopedTree?.categoryIds : undefined}
         />
       </div>
@@ -493,7 +558,7 @@ const Index = () => {
       <JourneyBuckets
         search={search}
         statusFilter={statusFilter}
-        onBucketClick={(b) => setSelectedBucket(b)}
+        onBucketClick={selectBucket}
         allowedBucketIds={viewMode === 'product' ? scopedTree?.bucketIds : undefined}
       />
     </div>
