@@ -610,9 +610,19 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
 
 const InitiativeDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const productId = searchParams.get('product');
   const { data: initiative, isLoading, error } = useInitiative(id!);
+  const { data: filterProduct } = useProduct(productId || '');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const clearProductFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('product');
+    setSearchParams(next, { replace: true });
+  };
+
 
   const copyToClipboard = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
