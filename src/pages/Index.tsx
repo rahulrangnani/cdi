@@ -220,41 +220,34 @@ const CategoryList = ({
 const BucketCard = ({ bucket, onClick }: { bucket: any; onClick: () => void }) => (
   <div
     onClick={onClick}
-    className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
+    className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col h-full"
   >
-    <div className="h-2 w-full bg-gradient-to-r from-secondary to-primary shrink-0" />
-    <div className="p-6 flex flex-col flex-1 gap-4">
-      <div className="flex items-start gap-4">
-        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-secondary/20 to-primary/20 flex items-center justify-center shrink-0">
-          <Package className="h-6 w-6 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
-            {bucket.name}
-          </h3>
-          <p className="text-xs text-muted-foreground font-medium mt-0.5">Bucket</p>
-        </div>
-        <Badge
-          variant={bucket.status === 'active' ? 'default' : 'secondary'}
-          className={`shrink-0 ${bucket.status === 'active' ? 'bg-primary/90' : ''}`}
-        >
-          {bucket.status}
-        </Badge>
+    <div className="flex items-start justify-between mb-4">
+      <div className="w-11 h-11 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+        <Package className="h-5 w-5" />
       </div>
-      <div className="flex-1">
-        {bucket.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">{bucket.description}</p>
-        )}
-      </div>
-      <div className="flex items-center justify-end pt-3 border-t border-border/50 mt-auto">
-        <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-          Explore Categories
-          <ChevronRight className="h-4 w-4" />
-        </span>
-      </div>
+      <Badge
+        variant={bucket.status === 'active' ? 'default' : 'secondary'}
+        className={`text-[10px] font-bold uppercase tracking-wider ${bucket.status === 'active' ? 'bg-primary/10 text-primary hover:bg-primary/15' : ''}`}
+      >
+        {bucket.status}
+      </Badge>
+    </div>
+    <h3 className="font-display text-lg font-bold text-foreground group-hover:text-secondary transition-colors leading-tight">
+      {bucket.name}
+    </h3>
+    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">Bucket</p>
+    {bucket.description && (
+      <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{bucket.description}</p>
+    )}
+    <div className="flex items-center justify-end mt-auto pt-4 border-t border-border/70">
+      <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+        Explore categories <ChevronRight className="h-4 w-4" />
+      </span>
     </div>
   </div>
 );
+
 
 // ─── Product picker (step 1 of product view) ────────────────────────────────
 const ProductPicker = ({ onSelect }: { onSelect: (p: { id: string; name: string }) => void }) => {
