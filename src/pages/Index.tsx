@@ -164,8 +164,8 @@ const CategoryList = ({
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-foreground">{bucket.name}</h2>
-        <p className="text-muted-foreground mt-1">Select a main category to explore its initiatives</p>
+        <h2 className="font-display text-2xl font-bold text-foreground">{bucket.name}</h2>
+        <p className="text-muted-foreground mt-1 text-sm">Select a main category to explore its initiatives</p>
       </div>
 
       {sorted.length > 0 ? (
@@ -174,42 +174,35 @@ const CategoryList = ({
             <div
               key={cat.id}
               onClick={() => onCategoryClick({ id: cat.id, name: cat.name })}
-              className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
+              className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col h-full"
             >
-              <div className="h-2 w-full bg-gradient-to-r from-primary to-secondary shrink-0" />
-              <div className="p-6 flex flex-col flex-1 gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
-                    <FolderOpen className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
-                      {cat.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground font-medium mt-0.5">Main Category</p>
-                  </div>
-                  <Badge
-                    variant={cat.status === 'active' ? 'default' : 'secondary'}
-                    className={`shrink-0 ${cat.status === 'active' ? 'bg-primary/90' : ''}`}
-                  >
-                    {cat.status}
-                  </Badge>
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <FolderOpen className="h-5 w-5" />
                 </div>
-                <div className="flex-1">
-                  {cat.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{cat.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center justify-end pt-3 border-t border-border/50 mt-auto">
-                  <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                    Explore Initiatives
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                </div>
+                <Badge
+                  variant={cat.status === 'active' ? 'default' : 'secondary'}
+                  className={`text-[10px] font-bold uppercase tracking-wider ${cat.status === 'active' ? 'bg-primary/10 text-primary hover:bg-primary/15' : ''}`}
+                >
+                  {cat.status}
+                </Badge>
+              </div>
+              <h3 className="font-display text-lg font-bold text-foreground group-hover:text-secondary transition-colors leading-tight">
+                {cat.name}
+              </h3>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">Main Category</p>
+              {cat.description && (
+                <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{cat.description}</p>
+              )}
+              <div className="flex items-center justify-end mt-auto pt-4 border-t border-border/70">
+                <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                  Explore initiatives <ChevronRight className="h-4 w-4" />
+                </span>
               </div>
             </div>
           ))}
         </div>
+
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center border-2 border-dashed border-border rounded-xl py-16">
           <FolderOpen className="h-12 w-12 text-muted-foreground mb-3" />
