@@ -455,21 +455,31 @@ const Index = () => {
   // Bucket list (root of journey drill)
   return (
     <div className="space-y-6">
-      <ViewToggle mode={viewMode} onChange={handleModeChange} />
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-1">Overview</p>
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">Digital Initiatives</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Explore initiatives grouped by journey or filtered by product.
+          </p>
+        </div>
+        <ViewToggle mode={viewMode} onChange={handleModeChange} />
+      </div>
+
       {productChip}
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search buckets..."
+            placeholder="Search buckets…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-card"
+            className="pl-10 h-11 bg-card rounded-xl"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px] bg-card">
+          <SelectTrigger className="w-full sm:w-[180px] h-11 bg-card rounded-xl">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -492,17 +502,18 @@ const Index = () => {
 
 const ViewToggle = ({ mode, onChange }: { mode: ViewMode; onChange: (m: string) => void }) => (
   <Tabs value={mode} onValueChange={onChange} className="w-full sm:w-auto">
-    <TabsList className="grid grid-cols-2 w-full sm:w-[320px]">
-      <TabsTrigger value="journey" className="gap-2">
+    <TabsList className="grid grid-cols-2 w-full sm:w-[300px] bg-muted p-1 rounded-xl h-11">
+      <TabsTrigger value="journey" className="gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-secondary data-[state=active]:shadow-sm">
         <Layers className="h-4 w-4" />
         Journey view
       </TabsTrigger>
-      <TabsTrigger value="product" className="gap-2">
+      <TabsTrigger value="product" className="gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-secondary data-[state=active]:shadow-sm">
         <Box className="h-4 w-4" />
         Product view
       </TabsTrigger>
     </TabsList>
   </Tabs>
 );
+
 
 export default Index;
