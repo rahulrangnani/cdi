@@ -610,6 +610,7 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
 
 const InitiativeDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const productId = searchParams.get('product');
   const { data: initiative, isLoading, error } = useInitiative(id!);
