@@ -72,11 +72,12 @@ const BucketForm = () => {
         toast({ title: 'Bucket created successfully' });
       }
       navigate('/admin/buckets');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Bucket save failed:', error);
       toast({
         variant: 'destructive',
         title: `Failed to ${isEditing ? 'update' : 'create'} bucket`,
-        description: 'Please try again.',
+        description: error?.message || error?.details || 'Please try again.',
       });
     }
   };
