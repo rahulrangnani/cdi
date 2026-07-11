@@ -58,7 +58,7 @@ const initiativeSchema = z.object({
   description: z.string().optional(),
   overview: z.string().optional(),
   status: z.string().default('active'),
-  parent_id: z.string().optional(), // Optional — initiatives can exist without a main category
+  parent_id: z.string().min(1, 'Main Category is required'),
 });
 
 type InitiativeFormValues = z.infer<typeof initiativeSchema>;
