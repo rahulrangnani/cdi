@@ -58,7 +58,7 @@ const initiativeSchema = z.object({
   description: z.string().optional(),
   overview: z.string().optional(),
   status: z.string().default('active'),
-  parent_id: z.string().optional(), // Optional — initiatives can exist without a main category
+  parent_id: z.string().min(1, 'Main Category is required'),
 });
 
 type InitiativeFormValues = z.infer<typeof initiativeSchema>;
@@ -212,7 +212,8 @@ const InitiativeForm = () => {
         status: data.status || 'active',
         category: null,
         logo_url: null,
-        parent_id: (data.parent_id && data.parent_id !== '__none__') ? data.parent_id : null,
+        level: 'initiative',
+        parent_id: data.parent_id,
       } as any;
 
       if (isEditing) {
@@ -572,18 +573,14 @@ const InitiativeForm = () => {
                 name="parent_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Main Category <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>
-                    <Select
-                      onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)}
-                      value={field.value || '__none__'}
-                    >
+                    <FormLabel>Main Category *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="No main category (standalone initiative)" />
+                          <SelectValue placeholder="Select a main category" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="__none__">— No category (standalone) —</SelectItem>
                         {parentInitiatives
                           ?.filter(p => p.id !== id)
                           .map((p) => (
@@ -592,12 +589,13 @@ const InitiativeForm = () => {
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Optionally group this under a main category (e.g., VKYC → KYC). Standalone initiatives appear directly on the portal home page.
+                      Every initiative belongs to a main category (e.g., VKYC → KYC). Manage categories under Admin → Initiatives → Add Main Category.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
 
               <FormField
                 control={form.control}

@@ -16,6 +16,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import InitiativesManagement from "./pages/admin/InitiativesManagement";
 import InitiativeForm from "./pages/admin/InitiativeForm";
 import CategoryForm from "./pages/admin/CategoryForm";
+import BucketsManagement from "./pages/admin/BucketsManagement";
+import BucketForm from "./pages/admin/BucketForm";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import PartnerForm from "./pages/admin/PartnerForm";
 import AdminAccess from "./pages/admin/AdminAccess";
@@ -52,6 +54,10 @@ const App = () => (
               {/* Main category form */}
               <Route path="categories/new" element={<CategoryForm />} />
               <Route path="categories/:id" element={<CategoryForm />} />
+              {/* Bucket routes */}
+              <Route path="buckets" element={<BucketsManagement />} />
+              <Route path="buckets/new" element={<BucketForm />} />
+              <Route path="buckets/:id" element={<BucketForm />} />
               {/* Partners routes */}
               <Route path="partners" element={<PartnersManagement />} />
               <Route path="partners/new" element={<PartnerForm />} />
