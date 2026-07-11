@@ -264,44 +264,41 @@ const ProductPicker = ({ onSelect }: { onSelect: (p: { id: string; name: string 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Browse by Product</h2>
-        <p className="text-muted-foreground mt-1">Pick a product to see the journeys and partners powering it</p>
+        <h2 className="font-display text-2xl font-bold text-foreground">Browse by Product</h2>
+        <p className="text-muted-foreground mt-1 text-sm">Pick a product to see the journeys and partners powering it</p>
       </div>
 
       {products && products.length > 0 ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
           {products.map((p) => (
             <div
               key={p.id}
               onClick={() => onSelect({ id: p.id, name: p.name })}
-              className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
+              className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col h-full"
             >
-              <div className="h-2 w-full bg-gradient-to-r from-primary to-secondary shrink-0" />
-              <div className="p-6 flex flex-col flex-1 gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
-                    <Box className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
-                      {p.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground font-medium mt-0.5">Product</p>
-                  </div>
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Box className="h-5 w-5" />
                 </div>
-                {p.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 flex-1">{p.description}</p>
-                )}
-                <div className="flex items-center justify-end pt-3 border-t border-border/50 mt-auto">
-                  <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                    View Journeys
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                </div>
+                <Badge className="text-[10px] font-bold uppercase tracking-wider bg-secondary/10 text-secondary hover:bg-secondary/15">
+                  Product
+                </Badge>
+              </div>
+              <h3 className="font-display text-lg font-bold text-foreground group-hover:text-secondary transition-colors leading-tight">
+                {p.name}
+              </h3>
+              {p.description && (
+                <p className="text-sm text-muted-foreground mt-3 line-clamp-2 flex-1">{p.description}</p>
+              )}
+              <div className="flex items-center justify-end mt-auto pt-4 border-t border-border/70">
+                <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                  View journeys <ChevronRight className="h-4 w-4" />
+                </span>
               </div>
             </div>
           ))}
         </div>
+
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center border-2 border-dashed border-border rounded-xl py-16">
           <Box className="h-12 w-12 text-muted-foreground mb-3" />
