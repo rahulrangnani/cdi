@@ -1,4 +1,6 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useProduct } from '@/hooks/useProducts';
+import { Box, X } from 'lucide-react';
 import { useInitiative } from '@/hooks/useInitiatives';
 import { useApiDocuments, getSignedApiDocUrl } from '@/hooks/useApiDocuments';
 import { supabase } from '@/integrations/supabase/client';
