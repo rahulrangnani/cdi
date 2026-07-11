@@ -212,7 +212,8 @@ const InitiativeForm = () => {
         status: data.status || 'active',
         category: null,
         logo_url: null,
-        parent_id: (data.parent_id && data.parent_id !== '__none__') ? data.parent_id : null,
+        level: 'initiative',
+        parent_id: data.parent_id,
       } as any;
 
       if (isEditing) {
