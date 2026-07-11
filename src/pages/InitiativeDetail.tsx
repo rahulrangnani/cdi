@@ -1,4 +1,6 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useProduct } from '@/hooks/useProducts';
+import { Box, X } from 'lucide-react';
 import { useInitiative } from '@/hooks/useInitiatives';
 import { useApiDocuments, getSignedApiDocUrl } from '@/hooks/useApiDocuments';
 import { supabase } from '@/integrations/supabase/client';
@@ -608,9 +610,19 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
 
 const InitiativeDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const productId = searchParams.get('product');
   const { data: initiative, isLoading, error } = useInitiative(id!);
+  const { data: filterProduct } = useProduct(productId || '');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const clearProductFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('product');
+    setSearchParams(next, { replace: true });
+  };
+
 
   const copyToClipboard = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
@@ -632,11 +644,17 @@ const InitiativeDetail = () => {
     </div>
   );
 
-  const partners = [...(initiative.initiative_partners || [])].sort((a: any, b: any) => {
+  const allPartners = [...(initiative.initiative_partners || [])].sort((a: any, b: any) => {
     const ra = a.partner_rank ?? Number.POSITIVE_INFINITY;
     const rb = b.partner_rank ?? Number.POSITIVE_INFINITY;
     return ra - rb;
   });
+
+  const partners = productId
+    ? allPartners.filter((ip: any) =>
+        (ip.initiative_partner_products || []).some((ipp: any) => ipp.product_id === productId)
+      )
+    : allPartners;
 
   return (
     <div className="space-y-8">
@@ -658,6 +676,24 @@ const InitiativeDetail = () => {
           )}
         </div>
       </div>
+
+      {productId && (
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="gap-2 px-3 py-1.5">
+            <Box className="h-3.5 w-3.5" />
+            Filtered by product:{' '}
+            <span className="font-semibold">{filterProduct?.name || '…'}</span>
+            <button
+              onClick={clearProductFilter}
+              className="ml-1 hover:text-foreground transition-colors"
+              aria-label="Clear product filter"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </Badge>
+        </div>
+      )}
+
 
       {/* Partner Details — shown first */}
       <div className="space-y-4">

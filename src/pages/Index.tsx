@@ -1,24 +1,32 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useBuckets, useCategoriesByBucket, useSubInitiatives } from '@/hooks/useInitiatives';
+import { useProducts } from '@/hooks/useProducts';
+import { useProductScopedTree } from '@/hooks/useProductScopedTree';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Users, ArrowRight, Loader2, ChevronRight, Layers, ArrowLeft, FolderOpen, Package } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, Users, ArrowRight, Loader2, ChevronRight, Layers, ArrowLeft, FolderOpen, Package, X, Box } from 'lucide-react';
 
 type Crumb = { id: string; name: string };
+type ViewMode = 'journey' | 'product';
 
-// Level 3: sub-initiatives inside a main category
+// ─── Level 3: sub-initiatives inside a category ─────────────────────────────
 const SubInitiativeList = ({
   category,
   bucket,
   onBackToBuckets,
   onBackToCategories,
+  allowedInitiativeIds,
+  productQuery,
 }: {
   category: Crumb;
   bucket: Crumb;
   onBackToBuckets: () => void;
   onBackToCategories: () => void;
+  allowedInitiativeIds?: Set<string>;
+  productQuery?: string;
 }) => {
   const { data: subs, isLoading } = useSubInitiatives(category.id);
 
@@ -29,6 +37,10 @@ const SubInitiativeList = ({
       </div>
     );
   }
+
+  const filtered = allowedInitiativeIds
+    ? (subs || []).filter((s) => allowedInitiativeIds.has(s.id))
+    : (subs || []);
 
   return (
     <div className="space-y-6">
@@ -50,12 +62,16 @@ const SubInitiativeList = ({
         <p className="text-muted-foreground mt-1">Select an initiative to view partner integrations</p>
       </div>
 
-      {subs && subs.length > 0 ? (
+      {filtered.length > 0 ? (
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-          {[...subs]
+          {[...filtered]
             .sort((a, b) => (b.initiative_partners?.length || 0) - (a.initiative_partners?.length || 0))
             .map((sub) => (
-              <Link key={sub.id} to={`/initiatives/${sub.id}`} className="flex">
+              <Link
+                key={sub.id}
+                to={`/initiatives/${sub.id}${productQuery ? `?product=${productQuery}` : ''}`}
+                className="flex"
+              >
                 <div className="group relative bg-card border border-border/60 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col w-full">
                   <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-primary opacity-60 group-hover:opacity-100 transition-opacity" />
                   <div className="pl-3 flex flex-col flex-1 gap-3">
@@ -103,15 +119,17 @@ const SubInitiativeList = ({
   );
 };
 
-// Level 2: categories inside a bucket
+// ─── Level 2: categories inside a bucket ────────────────────────────────────
 const CategoryList = ({
   bucket,
   onBack,
   onCategoryClick,
+  allowedCategoryIds,
 }: {
   bucket: Crumb;
   onBack: () => void;
   onCategoryClick: (c: Crumb) => void;
+  allowedCategoryIds?: Set<string>;
 }) => {
   const { data: categories, isLoading } = useCategoriesByBucket(bucket.id);
 
@@ -123,7 +141,11 @@ const CategoryList = ({
     );
   }
 
-  const sorted = [...(categories || [])].sort((a: any, b: any) => {
+  const scoped = allowedCategoryIds
+    ? (categories || []).filter((c: any) => allowedCategoryIds.has(c.id))
+    : (categories || []);
+
+  const sorted = [...scoped].sort((a: any, b: any) => {
     const aHas = (a.initiative_partners?.length || 0) > 0 ? 1 : 0;
     const bHas = (b.initiative_partners?.length || 0) > 0 ? 1 : 0;
     return bHas - aHas;
@@ -200,7 +222,7 @@ const CategoryList = ({
   );
 };
 
-// Level 1: buckets
+// ─── Level 1: bucket card ───────────────────────────────────────────────────
 const BucketCard = ({ bucket, onClick }: { bucket: any; onClick: () => void }) => (
   <div
     onClick={onClick}
@@ -240,16 +262,82 @@ const BucketCard = ({ bucket, onClick }: { bucket: any; onClick: () => void }) =
   </div>
 );
 
-const Index = () => {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedBucket, setSelectedBucket] = useState<Crumb | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<Crumb | null>(null);
+// ─── Product picker (step 1 of product view) ────────────────────────────────
+const ProductPicker = ({ onSelect }: { onSelect: (p: { id: string; name: string }) => void }) => {
+  const { data: products, isLoading } = useProducts(false);
 
-  const { data: buckets, isLoading, error } = useBuckets({
-    status: statusFilter,
-    search,
-  });
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Browse by Product</h2>
+        <p className="text-muted-foreground mt-1">Pick a product to see the journeys and partners powering it</p>
+      </div>
+
+      {products && products.length > 0 ? (
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+          {products.map((p) => (
+            <div
+              key={p.id}
+              onClick={() => onSelect({ id: p.id, name: p.name })}
+              className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
+            >
+              <div className="h-2 w-full bg-gradient-to-r from-primary to-secondary shrink-0" />
+              <div className="p-6 flex flex-col flex-1 gap-4">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
+                    <Box className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
+                      {p.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground font-medium mt-0.5">Product</p>
+                  </div>
+                </div>
+                {p.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2 flex-1">{p.description}</p>
+                )}
+                <div className="flex items-center justify-end pt-3 border-t border-border/50 mt-auto">
+                  <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                    View Journeys
+                    <ChevronRight className="h-4 w-4" />
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center min-h-[30vh] text-center border-2 border-dashed border-border rounded-xl py-16">
+          <Box className="h-12 w-12 text-muted-foreground mb-3" />
+          <p className="text-lg font-medium text-muted-foreground">No products yet</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Journey list (buckets, optionally scoped by product) ───────────────────
+const JourneyBuckets = ({
+  search,
+  statusFilter,
+  onBucketClick,
+  allowedBucketIds,
+}: {
+  search: string;
+  statusFilter: string;
+  onBucketClick: (b: Crumb) => void;
+  allowedBucketIds?: Set<string>;
+}) => {
+  const { data: buckets, isLoading, error } = useBuckets({ status: statusFilter, search });
 
   if (error) {
     return (
@@ -259,32 +347,133 @@ const Index = () => {
     );
   }
 
-  if (selectedBucket && selectedCategory) {
+  if (isLoading) {
     return (
-      <SubInitiativeList
-        category={selectedCategory}
-        bucket={selectedBucket}
-        onBackToBuckets={() => {
-          setSelectedBucket(null);
-          setSelectedCategory(null);
-        }}
-        onBackToCategories={() => setSelectedCategory(null)}
-      />
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
-  if (selectedBucket) {
+  const scoped = allowedBucketIds
+    ? (buckets || []).filter((b: any) => allowedBucketIds.has(b.id))
+    : (buckets || []);
+
+  if (!scoped.length) {
     return (
-      <CategoryList
-        bucket={selectedBucket}
-        onBack={() => setSelectedBucket(null)}
-        onCategoryClick={(c) => setSelectedCategory(c)}
-      />
+      <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
+        <Package className="h-12 w-12 text-muted-foreground mb-3" />
+        <p className="text-lg text-muted-foreground mb-2">No buckets found</p>
+        <p className="text-sm text-muted-foreground">
+          {search ? 'Try adjusting your search or filters' : 'Check back later'}
+        </p>
+      </div>
     );
   }
 
   return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+      {scoped.map((bucket: any) => (
+        <BucketCard
+          key={bucket.id}
+          bucket={bucket}
+          onClick={() => onBucketClick({ id: bucket.id, name: bucket.name })}
+        />
+      ))}
+    </div>
+  );
+};
+
+// ─── Main ───────────────────────────────────────────────────────────────────
+const Index = () => {
+  const [viewMode, setViewMode] = useState<ViewMode>('journey');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedProduct, setSelectedProduct] = useState<Crumb | null>(null);
+  const [selectedBucket, setSelectedBucket] = useState<Crumb | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Crumb | null>(null);
+
+  const { data: scopedTree } = useProductScopedTree(
+    viewMode === 'product' ? selectedProduct?.id : null
+  );
+
+  const resetDrill = () => {
+    setSelectedBucket(null);
+    setSelectedCategory(null);
+  };
+
+  const handleModeChange = (mode: string) => {
+    setViewMode(mode as ViewMode);
+    setSelectedProduct(null);
+    resetDrill();
+  };
+
+  // ── Product view, step 1: pick a product
+  if (viewMode === 'product' && !selectedProduct) {
+    return (
+      <div className="space-y-6">
+        <ViewToggle mode={viewMode} onChange={handleModeChange} />
+        <ProductPicker onSelect={(p) => setSelectedProduct(p)} />
+      </div>
+    );
+  }
+
+  const productChip = viewMode === 'product' && selectedProduct ? (
+    <div className="flex items-center gap-2">
+      <Badge variant="secondary" className="gap-2 px-3 py-1.5">
+        <Box className="h-3.5 w-3.5" />
+        Product: <span className="font-semibold">{selectedProduct.name}</span>
+        <button
+          onClick={() => { setSelectedProduct(null); resetDrill(); }}
+          className="ml-1 hover:text-foreground transition-colors"
+          aria-label="Clear product filter"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </Badge>
+    </div>
+  ) : null;
+
+  // Deep view (category selected)
+  if (selectedBucket && selectedCategory) {
+    return (
+      <div className="space-y-6">
+        <ViewToggle mode={viewMode} onChange={handleModeChange} />
+        {productChip}
+        <SubInitiativeList
+          category={selectedCategory}
+          bucket={selectedBucket}
+          onBackToBuckets={resetDrill}
+          onBackToCategories={() => setSelectedCategory(null)}
+          allowedInitiativeIds={viewMode === 'product' ? scopedTree?.initiativeIds : undefined}
+          productQuery={viewMode === 'product' ? selectedProduct?.id : undefined}
+        />
+      </div>
+    );
+  }
+
+  // Bucket selected
+  if (selectedBucket) {
+    return (
+      <div className="space-y-6">
+        <ViewToggle mode={viewMode} onChange={handleModeChange} />
+        {productChip}
+        <CategoryList
+          bucket={selectedBucket}
+          onBack={resetDrill}
+          onCategoryClick={(c) => setSelectedCategory(c)}
+          allowedCategoryIds={viewMode === 'product' ? scopedTree?.categoryIds : undefined}
+        />
+      </div>
+    );
+  }
+
+  // Bucket list (root of journey drill)
+  return (
     <div className="space-y-6">
+      <ViewToggle mode={viewMode} onChange={handleModeChange} />
+      {productChip}
+
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -307,31 +496,29 @@ const Index = () => {
         </Select>
       </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center min-h-[40vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : buckets && buckets.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
-          {buckets.map((bucket: any) => (
-            <BucketCard
-              key={bucket.id}
-              bucket={bucket}
-              onClick={() => setSelectedBucket({ id: bucket.id, name: bucket.name })}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
-          <Package className="h-12 w-12 text-muted-foreground mb-3" />
-          <p className="text-lg text-muted-foreground mb-2">No buckets found</p>
-          <p className="text-sm text-muted-foreground">
-            {search ? 'Try adjusting your search or filters' : 'Check back later'}
-          </p>
-        </div>
-      )}
+      <JourneyBuckets
+        search={search}
+        statusFilter={statusFilter}
+        onBucketClick={(b) => setSelectedBucket(b)}
+        allowedBucketIds={viewMode === 'product' ? scopedTree?.bucketIds : undefined}
+      />
     </div>
   );
 };
+
+const ViewToggle = ({ mode, onChange }: { mode: ViewMode; onChange: (m: string) => void }) => (
+  <Tabs value={mode} onValueChange={onChange} className="w-full sm:w-auto">
+    <TabsList className="grid grid-cols-2 w-full sm:w-[320px]">
+      <TabsTrigger value="journey" className="gap-2">
+        <Layers className="h-4 w-4" />
+        Journey view
+      </TabsTrigger>
+      <TabsTrigger value="product" className="gap-2">
+        <Box className="h-4 w-4" />
+        Product view
+      </TabsTrigger>
+    </TabsList>
+  </Tabs>
+);
 
 export default Index;
