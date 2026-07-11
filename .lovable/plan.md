@@ -1,49 +1,74 @@
-## Add Product-wise view toggle on Home page
+## Redesign to Enterprise Minimalist shell
 
-Add a top-level view switcher on the portal home so users can browse either by **Journey** (current bucket → category → initiative drill) or by **Product** (product → filtered bucket drill).
+Apply the picked direction (locked tokens: bg #F8FAFC, ink #0F172A, primary green #3AA74E, deep blue #003A70; Urbanist headings + Epilogue body; sidebar + top header + content). No functionality changes — same routes, same drill-down, same partner tabs, same admin flows.
 
-### UX flow
+### 1. Design tokens
+
+- `src/index.css`: import Urbanist (600, 700) + Epilogue (400, 500, 600) from Google Fonts. Update HSL tokens: `--background` = F8FAFC, `--foreground` = 0F172A, `--card` = white, `--primary` = 3AA74E (green), `--secondary` = 003A70 (deep navy blue), `--muted`, `--border`, `--input`, `--ring` slate values. Set `body { font-family: Epilogue }` and add `.font-display { font-family: Urbanist }`.
+- `tailwind.config.ts`: add `fontFamily.sans = ['Epilogue', ...]` and `fontFamily.display = ['Urbanist', ...]`. Keep semantic color mapping intact — no hardcoded hex in components.
+
+### 2. App shell (`MainLayout` + new `Sidebar`/`TopBar`)
+
+Replace the current top-only `Header` with a shell:
 
 ```text
-Home
- ├── [ Journey view | Product view ]  ← toggle
- │
- ├── Journey view (unchanged)
- │     Buckets → Categories → Initiatives → Partners
- │
- └── Product view (new)
-       Step 1: Grid of Products (from `products` table, active only)
-       Step 2: After picking a product → same Bucket → Category → Initiative drill,
-               but every level is filtered to only show nodes that contain at least
-               one partner linked to that product (via initiative_partner_products).
-               A "Product: {name} ✕" chip stays visible; clicking ✕ returns to Step 1.
-               On the Initiative detail page reached from this path, only partners
-               linked to the selected product are shown (filter passed via query param).
+┌────────────────────────────────────────────────┐
+│ Sidebar (w-64, white, right border)            │
+│  logo + brand                                  │
+│  nav: Discover · Admin (role-gated)            │
+│  user block at bottom                          │
+├────────────────────────────────────────────────┤
+│ TopBar (h-16, white, bottom border)            │
+│  page title (left) · search + bell (right)     │
+├────────────────────────────────────────────────┤
+│ Content (bg-background, p-8)                   │
+└────────────────────────────────────────────────┘
 ```
 
-### Filtering logic
+- New file `src/components/layout/Sidebar.tsx`: TVS mark + "TVS Credit" wordmark, nav links (Discover, Admin — only when `isAdmin`), user chip at bottom (email + role) with sign-out.
+- New file `src/components/layout/TopBar.tsx`: title prop (or reads route), keeps the existing avatar/sign-out surface, hosts the search & notifications icon (visual only for now).
+- `src/components/layout/MainLayout.tsx`: two-column flex — Sidebar + `<main>` (TopBar + `<Outlet/>` container). Mobile: sidebar collapses into a Sheet (shadcn) triggered by a menu button in TopBar.
+- Delete `src/components/layout/Header.tsx` (replaced by Sidebar + TopBar).
+- `src/components/NavLink.tsx`: restyle for sidebar look (active = `bg-muted text-secondary`).
+- `src/components/layout/AdminLayout.tsx`: reuse the same Sidebar/TopBar shell so admin pages match.
 
-A bucket/category/initiative is "in" the product view if it has any descendant `initiative_partner` whose `initiative_partner_products.product_id` matches the selected product.
+### 3. Home page (`src/pages/Index.tsx`) — visual only
 
-New hook `useProductScopedTree(productId)` runs one query:
+- Page header row: `Digital Initiatives Portal` (Urbanist bold) + subtitle.
+- Controls row: pill-style Journey/Product segmented toggle (restyled `Tabs`), status `Select` on the right. Search input in a rounded slate-100 pill (unchanged behavior).
+- Cards (Bucket / Category / Sub / Product): white `rounded-2xl`, `border-border`, `p-6`; icon tile (`w-12 h-12 rounded-xl bg-primary/10 text-primary`), status pill top-right, `font-display` title, muted description, meta row with dot + count, hover: `border-primary/30` + soft shadow + `-translate-y-0.5`. Remove existing gradient top strip.
+- Breadcrumbs stay minimal: chevron-separated text, "All Buckets" starts with ArrowLeft.
+- Empty states: same slate icon + text, unchanged copy.
 
-1. `initiative_partner_products` filtered by `product_id` → get `initiative_partner_id` list.
-2. `initiative_partners` for those → get `initiative_id` list (these are level=`initiative`).
-3. `initiatives` self-join up to `category` then `bucket` to derive the allowed id sets at each level.
+### 4. Initiative detail (`src/pages/InitiativeDetail.tsx`) — visual only
 
-Existing `useBuckets` / `useCategoriesByBucket` / `useSubInitiatives` accept an optional `allowedIds: Set<string>` prop and filter client-side; when omitted, behavior is unchanged (Journey view untouched).
+- Header block gets a subtle card container; product-filter chip restyled.
+- `PartnerCard`: white `rounded-2xl border`, header row (logo + name + priority + version), tabs styled as underline pills with primary-color active state (still shadcn `Tabs`, class overrides only). Tab bodies keep exact content — no field or logic changes.
+- Comparison tables: same structure, subtler zebra rows using `bg-muted/40`.
 
-### Initiative detail filtering
+### 5. Login page (`src/pages/Login.tsx`) — visual only
 
-`InitiativeDetail.tsx` reads `?product=<id>` from the URL. When present:
-- Filter the partners list to those with a matching `initiative_partner_products` row.
-- Show a "Filtered by product: {name} ✕" chip; ✕ removes the query param.
+Drop the giant green gradient hero. Two-column split on desktop: left = TVS mark + short brand line on `bg-secondary` (deep blue), right = login card on `bg-background`. On mobile the brand pane collapses to a slim top bar. Same form + copy.
 
-### Files to change
+### 6. Tokens/utility cleanup
 
-- `src/hooks/useInitiatives.ts` — add optional `allowedIds` filter to `useBuckets`, `useCategoriesByBucket`, `useSubInitiatives`.
-- `src/hooks/useProductScopedTree.ts` — **new**, resolves allowed bucket/category/initiative id sets for a product.
-- `src/pages/Index.tsx` — add view mode toggle (`journey` | `product`), product picker step, wire allowed-id sets into existing drill components, pass `?product=` on initiative links in product mode.
-- `src/pages/InitiativeDetail.tsx` — read `?product=` and filter partners + show chip.
+- Remove any leftover hardcoded `text-white`, custom gradients, or `bg-black`-ish classes in the touched files; use tokens (`bg-background`, `text-foreground`, `bg-primary`, `text-primary-foreground`, `bg-secondary`, `border-border`, `bg-muted`, `text-muted-foreground`).
+- No changes to hooks, queries, routing, admin CRUD, Supabase, or `client.ts`.
 
-No database or admin changes. Journey view remains pixel-identical when the toggle is on "Journey".
+### Files touched
+
+- `src/index.css` — tokens + font imports
+- `tailwind.config.ts` — font families
+- `src/components/layout/Sidebar.tsx` — new
+- `src/components/layout/TopBar.tsx` — new
+- `src/components/layout/MainLayout.tsx` — shell rewrite
+- `src/components/layout/AdminLayout.tsx` — same shell
+- `src/components/layout/Header.tsx` — delete
+- `src/components/NavLink.tsx` — sidebar variant
+- `src/pages/Index.tsx` — restyle only
+- `src/pages/InitiativeDetail.tsx` — restyle only
+- `src/pages/Login.tsx` — restyle only
+
+### Verification
+
+After the changes, capture the home page and login page with Playwright at 1280×1800 and confirm: sidebar visible, Urbanist titles, no gradient hero band, cards match the picked prototype's rhythm.
