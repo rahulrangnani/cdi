@@ -16,6 +16,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import InitiativesManagement from "./pages/admin/InitiativesManagement";
 import InitiativeForm from "./pages/admin/InitiativeForm";
 import CategoryForm from "./pages/admin/CategoryForm";
+import BucketsManagement from "./pages/admin/BucketsManagement";
+import BucketForm from "./pages/admin/BucketForm";
 import PartnersManagement from "./pages/admin/PartnersManagement";
 import PartnerForm from "./pages/admin/PartnerForm";
 import AdminAccess from "./pages/admin/AdminAccess";
