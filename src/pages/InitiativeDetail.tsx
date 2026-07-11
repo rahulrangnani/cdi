@@ -624,6 +624,15 @@ const InitiativeDetail = () => {
     setSearchParams(next, { replace: true });
   };
 
+  const handleBack = () => {
+    if ((window.history.state?.idx ?? 0) > 0) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/');
+  };
+
 
   const copyToClipboard = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
@@ -641,7 +650,7 @@ const InitiativeDetail = () => {
   if (error || !initiative) return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
       <p className="text-destructive">Failed to load initiative details.</p>
-      <Button asChild><Link to="/">Go Back</Link></Button>
+      <Button onClick={handleBack}>Go Back</Button>
     </div>
   );
 
@@ -661,7 +670,7 @@ const InitiativeDetail = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="icon" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
