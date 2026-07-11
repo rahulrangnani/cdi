@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useInitiative, useCreateInitiative, useUpdateInitiative } from '@/hooks/useInitiatives';
+import { useInitiative, useCreateInitiative, useUpdateInitiative, useBuckets } from '@/hooks/useInitiatives';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,12 +17,20 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ArrowLeft, Loader2, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'Category name is required'),
   description: z.string().optional(),
+  parent_id: z.string().min(1, 'Bucket is required'),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -34,12 +42,13 @@ const CategoryForm = () => {
   const isEditing = !!id;
 
   const { data: initiative, isLoading } = useInitiative(id!);
+  const { data: buckets } = useBuckets();
   const createInitiative = useCreateInitiative();
   const updateInitiative = useUpdateInitiative();
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { name: '', description: '' },
+    defaultValues: { name: '', description: '', parent_id: '' },
   });
 
   useEffect(() => {
@@ -47,6 +56,7 @@ const CategoryForm = () => {
       form.reset({
         name: initiative.name,
         description: initiative.description || '',
+        parent_id: initiative.parent_id || '',
       });
     }
   }, [initiative, form]);
@@ -56,7 +66,8 @@ const CategoryForm = () => {
       const payload = {
         name: data.name,
         description: data.description || null,
-        parent_id: null, // Main categories have no parent
+        parent_id: data.parent_id,
+        level: 'category',
         status: 'active',
         category: null,
         logo_url: null,
@@ -101,9 +112,7 @@ const CategoryForm = () => {
             {isEditing ? 'Edit Main Category' : 'Create Main Category'}
           </h1>
           <p className="text-muted-foreground">
-            {isEditing
-              ? 'Update this top-level category'
-              : 'Top-level category that groups related sub-initiatives (e.g., KYC, Voice Bots)'}
+            {isEditing ? 'Update this main category' : 'A main category sits under a bucket and groups related initiatives.'}
           </p>
         </div>
       </div>
@@ -117,7 +126,7 @@ const CategoryForm = () => {
             <div>
               <CardTitle>Category Details</CardTitle>
               <CardDescription>
-                This becomes a top-level item on the portal (e.g., clicking "KYC" will show CKYC, VKYC etc.)
+                Hierarchy: Bucket → Main Category → Initiative.
               </CardDescription>
             </div>
           </div>
@@ -127,6 +136,32 @@ const CategoryForm = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
+                name="parent_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bucket *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a bucket" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {buckets?.map((b: any) => (
+                          <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Every main category must belong to a bucket. Create buckets under Admin → Buckets.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
@@ -134,9 +169,6 @@ const CategoryForm = () => {
                     <FormControl>
                       <Input placeholder="e.g., KYC, Voice Bots, Credit Bureau" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Keep it short and descriptive — this is what users click first on the portal.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -155,9 +187,6 @@ const CategoryForm = () => {
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Optional — helps users understand the scope of this category.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
