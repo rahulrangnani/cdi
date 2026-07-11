@@ -58,54 +58,55 @@ const SubInitiativeList = ({
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-foreground">{category.name}</h2>
-        <p className="text-muted-foreground mt-1">Select an initiative to view partner integrations</p>
+        <h2 className="font-display text-2xl font-bold text-foreground">{category.name}</h2>
+        <p className="text-muted-foreground mt-1 text-sm">Select an initiative to view partner integrations</p>
       </div>
 
       {filtered.length > 0 ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
           {[...filtered]
             .sort((a, b) => (b.initiative_partners?.length || 0) - (a.initiative_partners?.length || 0))
-            .map((sub) => (
-              <Link
-                key={sub.id}
-                to={`/initiatives/${sub.id}${productQuery ? `?product=${productQuery}` : ''}`}
-                className="flex"
-              >
-                <div className="group relative bg-card border border-border/60 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col w-full">
-                  <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-primary opacity-60 group-hover:opacity-100 transition-opacity" />
-                  <div className="pl-3 flex flex-col flex-1 gap-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold text-base text-foreground group-hover:text-primary transition-colors leading-tight">
-                        {sub.name}
-                      </h3>
+            .map((sub) => {
+              const count = sub.initiative_partners?.length || 0;
+              return (
+                <Link
+                  key={sub.id}
+                  to={`/initiatives/${sub.id}${productQuery ? `?product=${productQuery}` : ''}`}
+                  className="flex"
+                >
+                  <div className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col w-full">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                        <Layers className="h-5 w-5" />
+                      </div>
                       <Badge
                         variant={sub.status === 'active' ? 'default' : 'secondary'}
-                        className={`shrink-0 text-xs ${sub.status === 'active' ? 'bg-primary/90' : ''}`}
+                        className={`text-[10px] font-bold uppercase tracking-wider ${sub.status === 'active' ? 'bg-primary/10 text-primary hover:bg-primary/15' : ''}`}
                       >
                         {sub.status}
                       </Badge>
                     </div>
-                    <div className="flex-1">
-                      {sub.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">{sub.description}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between pt-2 mt-auto border-t border-border/40">
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" />
-                        <span>{sub.initiative_partners?.length || 0} Partner{(sub.initiative_partners?.length || 0) !== 1 ? 's' : ''}</span>
-                      </div>
-                      <span className="text-xs font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                        View Details
-                        <ArrowRight className="h-3.5 w-3.5" />
+                    <h3 className="font-display text-lg font-bold text-foreground group-hover:text-secondary transition-colors leading-tight">
+                      {sub.name}
+                    </h3>
+                    {sub.description && (
+                      <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">{sub.description}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground mt-6 pt-4 border-t border-border/70">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        {count} Partner{count !== 1 ? 's' : ''}
+                      </span>
+                      <span className="ml-auto text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                        View details <ArrowRight className="h-3.5 w-3.5" />
                       </span>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
         </div>
+
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center border-2 border-dashed border-border rounded-xl py-16">
           <Layers className="h-12 w-12 text-muted-foreground mb-3" />
@@ -163,8 +164,8 @@ const CategoryList = ({
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-foreground">{bucket.name}</h2>
-        <p className="text-muted-foreground mt-1">Select a main category to explore its initiatives</p>
+        <h2 className="font-display text-2xl font-bold text-foreground">{bucket.name}</h2>
+        <p className="text-muted-foreground mt-1 text-sm">Select a main category to explore its initiatives</p>
       </div>
 
       {sorted.length > 0 ? (
@@ -173,42 +174,35 @@ const CategoryList = ({
             <div
               key={cat.id}
               onClick={() => onCategoryClick({ id: cat.id, name: cat.name })}
-              className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
+              className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col h-full"
             >
-              <div className="h-2 w-full bg-gradient-to-r from-primary to-secondary shrink-0" />
-              <div className="p-6 flex flex-col flex-1 gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
-                    <FolderOpen className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
-                      {cat.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground font-medium mt-0.5">Main Category</p>
-                  </div>
-                  <Badge
-                    variant={cat.status === 'active' ? 'default' : 'secondary'}
-                    className={`shrink-0 ${cat.status === 'active' ? 'bg-primary/90' : ''}`}
-                  >
-                    {cat.status}
-                  </Badge>
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <FolderOpen className="h-5 w-5" />
                 </div>
-                <div className="flex-1">
-                  {cat.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">{cat.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center justify-end pt-3 border-t border-border/50 mt-auto">
-                  <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                    Explore Initiatives
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                </div>
+                <Badge
+                  variant={cat.status === 'active' ? 'default' : 'secondary'}
+                  className={`text-[10px] font-bold uppercase tracking-wider ${cat.status === 'active' ? 'bg-primary/10 text-primary hover:bg-primary/15' : ''}`}
+                >
+                  {cat.status}
+                </Badge>
+              </div>
+              <h3 className="font-display text-lg font-bold text-foreground group-hover:text-secondary transition-colors leading-tight">
+                {cat.name}
+              </h3>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">Main Category</p>
+              {cat.description && (
+                <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{cat.description}</p>
+              )}
+              <div className="flex items-center justify-end mt-auto pt-4 border-t border-border/70">
+                <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                  Explore initiatives <ChevronRight className="h-4 w-4" />
+                </span>
               </div>
             </div>
           ))}
         </div>
+
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center border-2 border-dashed border-border rounded-xl py-16">
           <FolderOpen className="h-12 w-12 text-muted-foreground mb-3" />
@@ -226,41 +220,34 @@ const CategoryList = ({
 const BucketCard = ({ bucket, onClick }: { bucket: any; onClick: () => void }) => (
   <div
     onClick={onClick}
-    className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
+    className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col h-full"
   >
-    <div className="h-2 w-full bg-gradient-to-r from-secondary to-primary shrink-0" />
-    <div className="p-6 flex flex-col flex-1 gap-4">
-      <div className="flex items-start gap-4">
-        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-secondary/20 to-primary/20 flex items-center justify-center shrink-0">
-          <Package className="h-6 w-6 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
-            {bucket.name}
-          </h3>
-          <p className="text-xs text-muted-foreground font-medium mt-0.5">Bucket</p>
-        </div>
-        <Badge
-          variant={bucket.status === 'active' ? 'default' : 'secondary'}
-          className={`shrink-0 ${bucket.status === 'active' ? 'bg-primary/90' : ''}`}
-        >
-          {bucket.status}
-        </Badge>
+    <div className="flex items-start justify-between mb-4">
+      <div className="w-11 h-11 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center">
+        <Package className="h-5 w-5" />
       </div>
-      <div className="flex-1">
-        {bucket.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">{bucket.description}</p>
-        )}
-      </div>
-      <div className="flex items-center justify-end pt-3 border-t border-border/50 mt-auto">
-        <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-          Explore Categories
-          <ChevronRight className="h-4 w-4" />
-        </span>
-      </div>
+      <Badge
+        variant={bucket.status === 'active' ? 'default' : 'secondary'}
+        className={`text-[10px] font-bold uppercase tracking-wider ${bucket.status === 'active' ? 'bg-primary/10 text-primary hover:bg-primary/15' : ''}`}
+      >
+        {bucket.status}
+      </Badge>
+    </div>
+    <h3 className="font-display text-lg font-bold text-foreground group-hover:text-secondary transition-colors leading-tight">
+      {bucket.name}
+    </h3>
+    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mt-1">Bucket</p>
+    {bucket.description && (
+      <p className="text-sm text-muted-foreground mt-3 line-clamp-2">{bucket.description}</p>
+    )}
+    <div className="flex items-center justify-end mt-auto pt-4 border-t border-border/70">
+      <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+        Explore categories <ChevronRight className="h-4 w-4" />
+      </span>
     </div>
   </div>
 );
+
 
 // ─── Product picker (step 1 of product view) ────────────────────────────────
 const ProductPicker = ({ onSelect }: { onSelect: (p: { id: string; name: string }) => void }) => {
@@ -277,44 +264,41 @@ const ProductPicker = ({ onSelect }: { onSelect: (p: { id: string; name: string 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Browse by Product</h2>
-        <p className="text-muted-foreground mt-1">Pick a product to see the journeys and partners powering it</p>
+        <h2 className="font-display text-2xl font-bold text-foreground">Browse by Product</h2>
+        <p className="text-muted-foreground mt-1 text-sm">Pick a product to see the journeys and partners powering it</p>
       </div>
 
       {products && products.length > 0 ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
           {products.map((p) => (
             <div
               key={p.id}
               onClick={() => onSelect({ id: p.id, name: p.name })}
-              className="group relative bg-card border border-border/60 rounded-xl overflow-hidden hover:border-primary/50 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full"
+              className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col h-full"
             >
-              <div className="h-2 w-full bg-gradient-to-r from-primary to-secondary shrink-0" />
-              <div className="p-6 flex flex-col flex-1 gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center shrink-0">
-                    <Box className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors leading-tight">
-                      {p.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground font-medium mt-0.5">Product</p>
-                  </div>
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Box className="h-5 w-5" />
                 </div>
-                {p.description && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 flex-1">{p.description}</p>
-                )}
-                <div className="flex items-center justify-end pt-3 border-t border-border/50 mt-auto">
-                  <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                    View Journeys
-                    <ChevronRight className="h-4 w-4" />
-                  </span>
-                </div>
+                <Badge className="text-[10px] font-bold uppercase tracking-wider bg-secondary/10 text-secondary hover:bg-secondary/15">
+                  Product
+                </Badge>
+              </div>
+              <h3 className="font-display text-lg font-bold text-foreground group-hover:text-secondary transition-colors leading-tight">
+                {p.name}
+              </h3>
+              {p.description && (
+                <p className="text-sm text-muted-foreground mt-3 line-clamp-2 flex-1">{p.description}</p>
+              )}
+              <div className="flex items-center justify-end mt-auto pt-4 border-t border-border/70">
+                <span className="text-sm font-semibold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                  View journeys <ChevronRight className="h-4 w-4" />
+                </span>
               </div>
             </div>
           ))}
         </div>
+
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center border-2 border-dashed border-border rounded-xl py-16">
           <Box className="h-12 w-12 text-muted-foreground mb-3" />
@@ -471,21 +455,31 @@ const Index = () => {
   // Bucket list (root of journey drill)
   return (
     <div className="space-y-6">
-      <ViewToggle mode={viewMode} onChange={handleModeChange} />
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-1">Overview</p>
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">Digital Initiatives</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Explore initiatives grouped by journey or filtered by product.
+          </p>
+        </div>
+        <ViewToggle mode={viewMode} onChange={handleModeChange} />
+      </div>
+
       {productChip}
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search buckets..."
+            placeholder="Search buckets…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-card"
+            className="pl-10 h-11 bg-card rounded-xl"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-[180px] bg-card">
+          <SelectTrigger className="w-full sm:w-[180px] h-11 bg-card rounded-xl">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -508,17 +502,18 @@ const Index = () => {
 
 const ViewToggle = ({ mode, onChange }: { mode: ViewMode; onChange: (m: string) => void }) => (
   <Tabs value={mode} onValueChange={onChange} className="w-full sm:w-auto">
-    <TabsList className="grid grid-cols-2 w-full sm:w-[320px]">
-      <TabsTrigger value="journey" className="gap-2">
+    <TabsList className="grid grid-cols-2 w-full sm:w-[300px] bg-muted p-1 rounded-xl h-11">
+      <TabsTrigger value="journey" className="gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-secondary data-[state=active]:shadow-sm">
         <Layers className="h-4 w-4" />
         Journey view
       </TabsTrigger>
-      <TabsTrigger value="product" className="gap-2">
+      <TabsTrigger value="product" className="gap-2 rounded-lg data-[state=active]:bg-card data-[state=active]:text-secondary data-[state=active]:shadow-sm">
         <Box className="h-4 w-4" />
         Product view
       </TabsTrigger>
     </TabsList>
   </Tabs>
 );
+
 
 export default Index;

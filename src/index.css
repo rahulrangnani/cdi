@@ -1,109 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700;800&family=Epilogue:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* All colors MUST be HSL — semantic tokens only. */
 
 @layer base {
   :root {
-    /* TVS Credit Brand Colors - Professional Blue & Green */
-    --background: 210 20% 98%;
-    --foreground: 207 100% 22%;
+    /* Enterprise minimalist palette */
+    /* bg #F8FAFC, ink #0F172A, primary green #3AA74E, secondary navy #003A70 */
+    --background: 210 40% 98%;          /* #F8FAFC */
+    --foreground: 222 47% 11%;          /* #0F172A slate-900 */
 
     --card: 0 0% 100%;
-    --card-foreground: 207 100% 22%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 207 100% 22%;
+    --popover-foreground: 222 47% 11%;
 
-    /* TVS Green - Primary Action Color */
-    --primary: 134 50% 45%;
+    /* TVS Green — primary action */
+    --primary: 134 50% 45%;             /* #3AA74E */
     --primary-foreground: 0 0% 100%;
 
-    /* TVS Deep Blue - Secondary/Brand Color */
-    --secondary: 207 100% 22%;
+    /* TVS Deep Blue — brand accent */
+    --secondary: 208 100% 22%;          /* #003A70 */
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 207 30% 45%;
+    --muted: 210 40% 96%;               /* slate-100 */
+    --muted-foreground: 215 16% 47%;    /* slate-500 */
 
-    /* TVS Deep Blue for accents */
-    --accent: 207 100% 22%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 208 100% 22%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 25% 88%;
-    --input: 210 25% 88%;
+    --border: 214 32% 91%;              /* slate-200 */
+    --input: 214 32% 91%;
     --ring: 134 50% 45%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    /* Sidebar uses Green as primary */
-    --sidebar-background: 134 50% 42%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 134 50% 42%;
-    --sidebar-accent: 134 50% 35%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 134 50% 35%;
-    --sidebar-ring: 0 0% 100%;
+    /* Sidebar — light shell (white) */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 208 100% 22%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 208 100% 22%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 134 50% 45%;
 
-    /* Custom brand tokens */
-    --tvs-blue: 207 100% 22%;
-    --tvs-green: 134 50% 42%;
+    /* Legacy brand tokens kept for existing references */
+    --tvs-blue: 208 100% 22%;
+    --tvs-green: 134 50% 45%;
     --tvs-green-dark: 134 55% 35%;
-    --tvs-blue-light: 207 60% 35%;
-    
-    /* Header gradient - Green dominant */
-    --header-gradient: linear-gradient(135deg, hsl(134 50% 42%) 0%, hsl(134 55% 35%) 100%);
+    --tvs-blue-light: 208 60% 35%;
   }
 
   .dark {
-    --background: 207 50% 8%;
-    --foreground: 0 0% 98%;
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
 
-    --card: 207 40% 12%;
-    --card-foreground: 0 0% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 207 40% 12%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
 
     --primary: 134 50% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 207 60% 35%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 208 60% 35%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 207 30% 18%;
-    --muted-foreground: 210 15% 65%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 207 60% 35%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 207 30% 20%;
-    --input: 207 30% 20%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
     --ring: 134 50% 45%;
 
-    --sidebar-background: 134 50% 38%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 134 50% 38%;
-    --sidebar-accent: 134 55% 30%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 134 55% 30%;
-    --sidebar-ring: 0 0% 100%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 134 50% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 20%;
+    --sidebar-ring: 134 50% 45%;
 
-    --tvs-blue: 207 100% 22%;
-    --tvs-green: 134 50% 42%;
+    --tvs-blue: 208 60% 35%;
+    --tvs-green: 134 50% 45%;
     --tvs-green-dark: 134 55% 35%;
-    --tvs-blue-light: 207 60% 35%;
+    --tvs-blue-light: 208 60% 45%;
   }
 }
 
@@ -112,7 +109,17 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: 'Epilogue', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Urbanist', 'Epilogue', ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.01em;
   }
 }
