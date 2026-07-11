@@ -1,4 +1,4 @@
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
 import { Box, X } from 'lucide-react';
 import { useInitiative } from '@/hooks/useInitiatives';
