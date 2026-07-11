@@ -573,18 +573,14 @@ const InitiativeForm = () => {
                 name="parent_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Main Category <span className="text-muted-foreground font-normal">(Optional)</span></FormLabel>
-                    <Select
-                      onValueChange={(val) => field.onChange(val === '__none__' ? '' : val)}
-                      value={field.value || '__none__'}
-                    >
+                    <FormLabel>Main Category *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="No main category (standalone initiative)" />
+                          <SelectValue placeholder="Select a main category" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="__none__">— No category (standalone) —</SelectItem>
                         {parentInitiatives
                           ?.filter(p => p.id !== id)
                           .map((p) => (
@@ -593,12 +589,13 @@ const InitiativeForm = () => {
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Optionally group this under a main category (e.g., VKYC → KYC). Standalone initiatives appear directly on the portal home page.
+                      Every initiative belongs to a main category (e.g., VKYC → KYC). Manage categories under Admin → Initiatives → Add Main Category.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
 
               <FormField
                 control={form.control}
