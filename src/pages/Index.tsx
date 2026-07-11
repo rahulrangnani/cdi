@@ -58,54 +58,55 @@ const SubInitiativeList = ({
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold text-foreground">{category.name}</h2>
-        <p className="text-muted-foreground mt-1">Select an initiative to view partner integrations</p>
+        <h2 className="font-display text-2xl font-bold text-foreground">{category.name}</h2>
+        <p className="text-muted-foreground mt-1 text-sm">Select an initiative to view partner integrations</p>
       </div>
 
       {filtered.length > 0 ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3 items-stretch">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 items-stretch">
           {[...filtered]
             .sort((a, b) => (b.initiative_partners?.length || 0) - (a.initiative_partners?.length || 0))
-            .map((sub) => (
-              <Link
-                key={sub.id}
-                to={`/initiatives/${sub.id}${productQuery ? `?product=${productQuery}` : ''}`}
-                className="flex"
-              >
-                <div className="group relative bg-card border border-border/60 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col w-full">
-                  <div className="absolute left-0 top-4 bottom-4 w-1 rounded-r-full bg-primary opacity-60 group-hover:opacity-100 transition-opacity" />
-                  <div className="pl-3 flex flex-col flex-1 gap-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold text-base text-foreground group-hover:text-primary transition-colors leading-tight">
-                        {sub.name}
-                      </h3>
+            .map((sub) => {
+              const count = sub.initiative_partners?.length || 0;
+              return (
+                <Link
+                  key={sub.id}
+                  to={`/initiatives/${sub.id}${productQuery ? `?product=${productQuery}` : ''}`}
+                  className="flex"
+                >
+                  <div className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer flex flex-col w-full">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                        <Layers className="h-5 w-5" />
+                      </div>
                       <Badge
                         variant={sub.status === 'active' ? 'default' : 'secondary'}
-                        className={`shrink-0 text-xs ${sub.status === 'active' ? 'bg-primary/90' : ''}`}
+                        className={`text-[10px] font-bold uppercase tracking-wider ${sub.status === 'active' ? 'bg-primary/10 text-primary hover:bg-primary/15' : ''}`}
                       >
                         {sub.status}
                       </Badge>
                     </div>
-                    <div className="flex-1">
-                      {sub.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">{sub.description}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between pt-2 mt-auto border-t border-border/40">
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" />
-                        <span>{sub.initiative_partners?.length || 0} Partner{(sub.initiative_partners?.length || 0) !== 1 ? 's' : ''}</span>
-                      </div>
-                      <span className="text-xs font-medium text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                        View Details
-                        <ArrowRight className="h-3.5 w-3.5" />
+                    <h3 className="font-display text-lg font-bold text-foreground group-hover:text-secondary transition-colors leading-tight">
+                      {sub.name}
+                    </h3>
+                    {sub.description && (
+                      <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">{sub.description}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground mt-6 pt-4 border-t border-border/70">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        {count} Partner{count !== 1 ? 's' : ''}
+                      </span>
+                      <span className="ml-auto text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                        View details <ArrowRight className="h-3.5 w-3.5" />
                       </span>
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
         </div>
+
       ) : (
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center border-2 border-dashed border-border rounded-xl py-16">
           <Layers className="h-12 w-12 text-muted-foreground mb-3" />
