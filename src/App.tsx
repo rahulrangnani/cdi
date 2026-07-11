@@ -54,6 +54,10 @@ const App = () => (
               {/* Main category form */}
               <Route path="categories/new" element={<CategoryForm />} />
               <Route path="categories/:id" element={<CategoryForm />} />
+              {/* Bucket routes */}
+              <Route path="buckets" element={<BucketsManagement />} />
+              <Route path="buckets/new" element={<BucketForm />} />
+              <Route path="buckets/:id" element={<BucketForm />} />
               {/* Partners routes */}
               <Route path="partners" element={<PartnersManagement />} />
               <Route path="partners/new" element={<PartnerForm />} />
