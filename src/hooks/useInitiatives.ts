@@ -6,7 +6,14 @@ export type Initiative = Tables<'initiatives'> & { parent_id?: string | null };
 export type InitiativeInsert = TablesInsert<'initiatives'>;
 export type InitiativeUpdate = TablesUpdate<'initiatives'>;
 
-export const useInitiatives = (filters?: { status?: string; search?: string; parentId?: string | null }) => {
+export type InitiativeLevel = 'bucket' | 'category' | 'initiative';
+
+export const useInitiatives = (filters?: {
+  status?: string;
+  search?: string;
+  parentId?: string | null;
+  level?: InitiativeLevel;
+}) => {
   return useQuery({
     queryKey: ['initiatives', filters],
     queryFn: async () => {
@@ -33,6 +40,10 @@ export const useInitiatives = (filters?: { status?: string; search?: string; par
         query = query.ilike('name', `%${filters.search}%`);
       }
 
+      if (filters?.level) {
+        query = query.eq('level', filters.level);
+      }
+
       if (filters?.parentId !== undefined) {
         if (filters.parentId === null) {
           query = query.is('parent_id', null);
@@ -49,7 +60,52 @@ export const useInitiatives = (filters?: { status?: string; search?: string; par
   });
 };
 
-// Fetch only top-level (parent) initiatives
+// Buckets (top level)
+export const useBuckets = (filters?: { status?: string; search?: string }) => {
+  return useInitiatives({ ...filters, level: 'bucket', parentId: null });
+};
+
+// Categories under a specific bucket
+export const useCategoriesByBucket = (bucketId: string | null | undefined) => {
+  return useQuery({
+    queryKey: ['initiatives', 'categoriesByBucket', bucketId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('initiatives')
+        .select(`
+          *,
+          initiative_partners (
+            id,
+            partner:partners (id, name, logo_url)
+          )
+        `)
+        .eq('level', 'category')
+        .eq('parent_id', bucketId!)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!bucketId,
+  });
+};
+
+// All categories (for dropdowns) — optionally filter by bucket
+export const useAllCategories = () => {
+  return useQuery({
+    queryKey: ['initiatives', 'allCategories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('initiatives')
+        .select('id, name, parent_id')
+        .eq('level', 'category')
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
+// Legacy helper — now returns categories (the tier that historically was "parents" for sub-initiatives)
 export const useParentInitiatives = () => {
   return useQuery({
     queryKey: ['initiatives', 'parents'],
@@ -57,7 +113,7 @@ export const useParentInitiatives = () => {
       const { data, error } = await supabase
         .from('initiatives')
         .select('id, name')
-        .is('parent_id', null)
+        .eq('level', 'category')
         .order('name', { ascending: true });
       if (error) throw error;
       return data;
