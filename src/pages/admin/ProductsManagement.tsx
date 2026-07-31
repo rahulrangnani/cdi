@@ -111,7 +111,7 @@ const ProductsManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-          <p className="text-muted-foreground">Manage TVS Credit product catalog</p>
+          <p className="text-muted-foreground">Manage the product catalog</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>

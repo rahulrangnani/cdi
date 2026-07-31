@@ -43,7 +43,7 @@ const Login = () => {
             <div className="h-4 w-4 rounded-full bg-primary" />
           </div>
           <span className="font-display text-lg font-bold tracking-tight">
-            TVS <span className="text-primary">Credit</span>
+            <span className="text-primary">Your Brand</span>
           </span>
         </div>
 
@@ -53,7 +53,7 @@ const Login = () => {
             Digital Initiatives Portal.
           </h1>
           <p className="text-base text-secondary-foreground/80">
-            Discover, evaluate and compare every partner integration powering TVS Credit's digital products —
+            Discover, evaluate and compare every partner integration powering your organization's digital products —
             in one calm, secure workspace.
           </p>
 
@@ -74,7 +74,7 @@ const Login = () => {
         </div>
 
         <p className="relative text-xs text-secondary-foreground/50">
-          © {new Date().getFullYear()} TVS Credit Services Ltd. Confidential internal portal.
+          © {new Date().getFullYear()} Your Company. Confidential internal portal.
         </p>
       </div>
 
@@ -86,7 +86,7 @@ const Login = () => {
               <div className="h-4 w-4 rounded-full bg-primary" />
             </div>
             <span className="font-display text-lg font-bold tracking-tight text-foreground">
-              TVS <span className="text-primary">Credit</span>
+              <span className="text-primary">Your Brand</span>
             </span>
           </div>
 

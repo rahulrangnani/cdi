@@ -47,7 +47,7 @@ const SidebarNav = ({ onNavigate }: { onNavigate?: () => void }) => {
         </div>
         <div className="flex flex-col leading-tight">
           <span className="font-display text-base font-bold tracking-tight">
-            TVS <span className="text-primary">Credit</span>
+            <span className="text-primary">Your Brand</span>
           </span>
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Initiatives Portal</span>
         </div>
@@ -164,7 +164,7 @@ const MainLayout = () => {
         </main>
         <footer className="border-t border-border bg-card/40 px-4 md:px-8 py-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-            <p>© {new Date().getFullYear()} TVS Credit Services Ltd. Internal portal.</p>
+            <p>© {new Date().getFullYear()} Your Company. Internal portal.</p>
             <nav className="flex gap-5">
               <a href="#" className="hover:text-foreground transition-colors">System Status</a>
               <a href="#" className="hover:text-foreground transition-colors">Documentation</a>
