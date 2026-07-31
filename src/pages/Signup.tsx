@@ -8,6 +8,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
+/**
+ * EMAIL DOMAIN RESTRICTION — change this to enable/disable the control.
+ * Set to your organization's domain (e.g. 'company.com') to restrict signups
+ * to that domain. Set to null to allow any email domain.
+ */
+const ALLOWED_EMAIL_DOMAIN: string | null = null;
+
 const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,15 +28,16 @@ const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate email domain
-    if (!email.toLowerCase().endsWith('@tvscredit.com')) {
+    // Validate email domain (only enforced when ALLOWED_EMAIL_DOMAIN is set above)
+    if (ALLOWED_EMAIL_DOMAIN && !email.toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`)) {
       toast({
         variant: 'destructive',
         title: 'Invalid email domain',
-        description: 'Only @tvscredit.com email addresses are allowed to register.',
+        description: `Only @${ALLOWED_EMAIL_DOMAIN} email addresses are allowed to register.`,
       });
       return;
     }
+
 
     if (password !== confirmPassword) {
       toast({
