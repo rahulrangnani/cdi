@@ -71,17 +71,16 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-tvs-green via-tvs-green-dark to-tvs-green p-4">
+    <div className="min-h-screen flex items-center justify-center bg-secondary p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <div className="bg-card rounded-xl p-4 shadow-lg">
-            <img 
-              src="https://www.tvscredit.com/wp-content/uploads/2025/03/tvs_credit_logo.svg" 
-              alt="TVS Credit" 
-              className="h-12"
-            />
+          <div className="bg-card rounded-xl px-6 py-4 shadow-lg">
+            <span className="font-display text-lg font-bold tracking-tight text-primary">
+              Your Brand
+            </span>
           </div>
         </div>
+
         <Card className="shadow-2xl border-0">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
@@ -108,7 +107,7 @@ const Signup = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="name@tvscredit.com"
+                  placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

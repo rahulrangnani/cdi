@@ -42,7 +42,7 @@ const AdminLayout = () => {
           </div>
           <div className="flex flex-col leading-tight">
             <span className="font-display text-base font-bold tracking-tight text-foreground">
-              TVS <span className="text-primary">Credit</span>
+              <span className="text-primary">Your Brand</span>
             </span>
             <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Admin Console</span>
           </div>
