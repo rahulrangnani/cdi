@@ -1,4 +1,4 @@
-# TVS Credit Connect
+#  Connect
 
 PROJECT OVERVIEW
 Create a comprehensive Digital Initiatives Management Platform for TVS Credit's internal stakeholders. This platform will serve as a centralized hub where product teams, operations managers, and other internal users can:
