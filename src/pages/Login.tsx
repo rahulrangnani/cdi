@@ -61,7 +61,7 @@ const Login = () => {
             {[
               { icon: Sparkles, text: 'Browse initiatives by journey or product' },
               { icon: Users, text: 'Compare partners across features & commercials' },
-              { icon: ShieldCheck, text: 'Secured for @tvscredit.com identities' },
+              { icon: ShieldCheck, text: 'Secured for verified company identities' },
             ].map((f) => (
               <li key={f.text} className="flex items-center gap-3 text-sm text-secondary-foreground/85">
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary-foreground/10">
@@ -94,7 +94,7 @@ const Login = () => {
             <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Welcome back</p>
             <h2 className="font-display text-3xl font-bold text-foreground">Sign in to continue</h2>
             <p className="text-sm text-muted-foreground mt-2">
-              Use your <span className="font-medium text-foreground">@tvscredit.com</span> account to access the portal.
+              Use your <span className="font-medium text-foreground">company</span> account to access the portal.
             </p>
           </div>
 
@@ -104,7 +104,7 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="name@tvscredit.com"
+                placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

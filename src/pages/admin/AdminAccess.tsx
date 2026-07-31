@@ -146,7 +146,7 @@ const AdminAccess = () => {
         <CardContent>
           <div className="flex gap-3">
             <Input
-              placeholder="user@tvscredit.com"
+              placeholder="user@company.com"
               value={newAdminEmail}
               onChange={(e) => setNewAdminEmail(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAdmin.mutate(newAdminEmail); } }}
