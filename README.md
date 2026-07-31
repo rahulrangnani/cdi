@@ -1,7 +1,7 @@
 #  Connect
 
 PROJECT OVERVIEW
-Create a comprehensive Digital Initiatives Management Platform for TVS Credit's internal stakeholders. This platform will serve as a centralized hub where product teams, operations managers, and other internal users can:
+Create a comprehensive Digital Initiatives Management Platform l This platform will serve as a centralized hub where product teams, operations managers, and other internal users can:
 
 Discover all available digital initiatives and APIs
 
@@ -44,7 +44,7 @@ Initiative name and description
 
 Overall purpose and benefits
 
-Integration status across TVS Credit products
+Integration status across products
 
 Partners Section
 
@@ -103,7 +103,6 @@ d. Products & Features
 
 Multi-select dropdown showing which TVS Credit products use this partner
 
-Available products: Two Wheeler, Used Cars, Consumer Durables, Mobile Loans, Personal Loan, Gold Loan, Used Commercial Loan, Tractor Loan, Loan Against Property, Emerging & Mid Corporate Business Loan, Three Wheeler Loan, Used Construction Equipment Loan
 
 For each product, show: Current usage status, implementation date, transaction volume
 
