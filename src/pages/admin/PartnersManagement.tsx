@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Plus, Search, MoreHorizontal, Pencil, Trash2, Loader2, Globe } from 'lucide-react';
+import BulkPartnerUpload from './BulkPartnerUpload';
 import { useToast } from '@/hooks/use-toast';
 
 const PartnersManagement = () => {
@@ -62,12 +63,15 @@ const PartnersManagement = () => {
           <h1 className="text-3xl font-bold tracking-tight">Partners</h1>
           <p className="text-muted-foreground">Manage partner organizations</p>
         </div>
+        <div className="flex gap-2">
+        <BulkPartnerUpload />
         <Button asChild>
           <Link to="/admin/partners/new">
             <Plus className="mr-2 h-4 w-4" />
             Add Partner
           </Link>
         </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

@@ -38,7 +38,16 @@ const partnerSchema = z.object({
   support_email: z.string().email().optional().or(z.literal('')),
   support_phone: z.string().optional(),
   support_hours: z.string().optional(),
+  escalation_1: z.string().optional(),
+  escalation_2: z.string().optional(),
+  escalation_3: z.string().optional(),
+  critical_escalation: z.string().optional(),
+  cbo: z.string().optional(),
+  cto: z.string().optional(),
+  ceo: z.string().optional(),
 });
+
+const ESC_LEVELS = [['escalation_1', 'Escalation 1'], ['escalation_2', 'Escalation 2'], ['escalation_3', 'Escalation 3'], ['critical_escalation', 'Critical Escalation'], ['cbo', 'CBO'], ['cto', 'CTO'], ['ceo', 'CEO']] as const;
 
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -66,6 +75,13 @@ const PartnerForm = () => {
       support_email: '',
       support_phone: '',
       support_hours: '',
+      escalation_1: '',
+      escalation_2: '',
+      escalation_3: '',
+      critical_escalation: '',
+      cbo: '',
+      cto: '',
+      ceo: '',
     },
   });
 
@@ -83,6 +99,13 @@ const PartnerForm = () => {
         support_email: partner.support_email || '',
         support_phone: partner.support_phone || '',
         support_hours: partner.support_hours || '',
+        escalation_1: ((partner as any).escalation_matrix?.escalation_1 as string) || '',
+        escalation_2: ((partner as any).escalation_matrix?.escalation_2 as string) || '',
+        escalation_3: ((partner as any).escalation_matrix?.escalation_3 as string) || '',
+        critical_escalation: ((partner as any).escalation_matrix?.critical_escalation as string) || '',
+        cbo: ((partner as any).escalation_matrix?.cbo as string) || '',
+        cto: ((partner as any).escalation_matrix?.cto as string) || '',
+        ceo: ((partner as any).escalation_matrix?.ceo as string) || '',
       });
     }
   }, [partner, form]);
@@ -101,6 +124,7 @@ const PartnerForm = () => {
         support_email: data.support_email || null,
         support_phone: data.support_phone || null,
         support_hours: data.support_hours || null,
+        escalation_matrix: Object.fromEntries(ESC_LEVELS.map(([k]) => [k, ((data as any)[k] || '').trim()]).filter(([, v]) => v)),
       };
       
       if (isEditing) {
@@ -334,6 +358,26 @@ const PartnerForm = () => {
                     </FormItem>
                   )}
                 />
+              </div>
+              <div className="mt-6">
+                <p className="text-sm font-semibold mb-3">Escalation Matrix</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {ESC_LEVELS.map(([key, label]) => (
+                    <FormField
+                      key={key}
+                      control={form.control}
+                      name={key as keyof PartnerFormValues}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{label}</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Name - email - phone" {...field} value={(field.value as string) ?? ''} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
