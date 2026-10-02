@@ -7,6 +7,7 @@ import {
   Users, ShieldCheck, Package, Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import BackButton from '@/components/BackButton';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
@@ -96,7 +97,10 @@ const AdminLayout = () => {
 
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/80 backdrop-blur px-4 md:px-8">
-          <h1 className="font-display text-lg md:text-xl font-bold text-foreground">Admin Console</h1>
+          <div className="flex items-center gap-2">
+            {location.pathname !== '/admin' && <BackButton fallback="/admin" />}
+            <h1 className="font-display text-lg md:text-xl font-bold text-foreground">Admin Console</h1>
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="text-muted-foreground">
               <Bell className="h-5 w-5" />

@@ -15,6 +15,7 @@ import {
   Compass, ShieldCheck, Settings, LogOut, Menu, Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import BackButton from '@/components/BackButton';
 
 const navItems = [
   { to: '/', label: 'Discover', icon: Compass, match: (p: string) => p === '/' || p.startsWith('/initiatives') },
@@ -123,7 +124,8 @@ const pageTitleFor = (pathname: string) => {
 };
 
 const TopBar = () => {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const showBack = !(pathname === '/' && !search);
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/80 backdrop-blur px-4 md:px-8">
       <div className="flex items-center gap-3">
@@ -137,6 +139,7 @@ const TopBar = () => {
             <SidebarNav />
           </SheetContent>
         </Sheet>
+        {showBack && <BackButton fallback="/" />}
         <h1 className="font-display text-lg md:text-xl font-bold text-foreground">
           {pageTitleFor(pathname)}
         </h1>
