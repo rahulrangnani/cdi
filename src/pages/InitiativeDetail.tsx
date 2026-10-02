@@ -605,8 +605,15 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ip.support_details.known_issues}</p>
                     </div>
                   )}
-                  {(() => {
-                    const matrix = ip.support_details.escalation_matrix;
+                  </>
+                ) : null}
+                {(() => {
+                    const base = ((ip.partner as any)?.escalation_matrix ?? {}) as Record<string, string>;
+                    const over = ((ip.support_details as any)?.escalation_matrix ?? {}) as Record<string, string>;
+                    const matrix: Record<string, string> = { ...base };
+                    Object.entries(over).forEach(([k, v]) => {
+                      if (typeof v === 'string' && v.trim()) matrix[k] = v;
+                    });
                     const populatedLevels = escalationLevels.filter(([key]) =>
                       typeof matrix?.[key] === 'string' && matrix[key].trim().length > 0
                     );
@@ -637,8 +644,6 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
                       </div>
                     );
                   })()}
-                  </>
-                ) : null}
               </div>
             </TabsContent>
           </div>
