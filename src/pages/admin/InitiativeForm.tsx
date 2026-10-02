@@ -11,6 +11,7 @@ import { usePartners, useUpdatePartner } from '@/hooks/usePartners';
 import { useProducts } from '@/hooks/useProducts';
 import { useUpsertPartnerFeatures } from '@/hooks/usePartnerFeatures';
 import { useCreateApiDocument, useApiDocuments, useDeleteApiDocument } from '@/hooks/useApiDocuments';
+import { EscalationMatrix, useUpsertSupportEscalationMatrix } from '@/hooks/useSupportDetails';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,7 +47,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Loader2, Plus, Trash2, Building2, DollarSign, FileCode, FileText, Package, Image, Link2, Upload, Music, Film, CheckSquare, X } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Trash2, Building2, DollarSign, FileCode, FileText, Package, Image, Link2, Upload, Music, Film, CheckSquare, X, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -88,6 +89,13 @@ const partnerDetailsSchema = z.object({
   media_title: z.string().optional(),
   media_url: z.string().optional(),
   media_description: z.string().optional(),
+  escalation_1: z.string().optional(),
+  escalation_2: z.string().optional(),
+  escalation_3: z.string().optional(),
+  critical_escalation: z.string().optional(),
+  cbo: z.string().optional(),
+  cto: z.string().optional(),
+  ceo: z.string().optional(),
 });
 
 type PartnerFormValues = z.infer<typeof partnerDetailsSchema>;
@@ -155,6 +163,7 @@ const InitiativeForm = () => {
   const updateInitiativePartner = useUpdateInitiativePartner();
   const deleteInitiativePartner = useDeleteInitiativePartner();
   const syncProducts = useSyncInitiativePartnerProducts();
+  const upsertSupportEscalationMatrix = useUpsertSupportEscalationMatrix();
 
   const form = useForm<InitiativeFormValues>({
     resolver: zodResolver(initiativeSchema),
@@ -188,6 +197,13 @@ const InitiativeForm = () => {
       media_title: '',
       media_url: '',
       media_description: '',
+      escalation_1: '',
+      escalation_2: '',
+      escalation_3: '',
+      critical_escalation: '',
+      cbo: '',
+      cto: '',
+      ceo: '',
     },
   });
 
@@ -261,6 +277,13 @@ const InitiativeForm = () => {
       media_title: '',
       media_url: '',
       media_description: '',
+      escalation_1: '',
+      escalation_2: '',
+      escalation_3: '',
+      critical_escalation: '',
+      cbo: '',
+      cto: '',
+      ceo: '',
     });
     setSelectedProducts([]);
     setMediaSourceType('link');
@@ -288,6 +311,7 @@ const InitiativeForm = () => {
         initiativePartner.media_url.startsWith('audios/') ||
         initiativePartner.media_url.startsWith('documents/'));
     const sourceType = isUploadedFile ? 'upload' : 'link';
+    const escalationMatrix = (initiativePartner.support_details?.escalation_matrix || {}) as EscalationMatrix;
     partnerForm.reset({
       partner_id: initiativePartner.partner_id,
       partner_logo_url: initiativePartner.partner?.logo_url || '',
@@ -312,6 +336,13 @@ const InitiativeForm = () => {
       media_title: initiativePartner.media_title || '',
       media_url: initiativePartner.media_url || '',
       media_description: initiativePartner.media_description || '',
+      escalation_1: escalationMatrix.escalation_1 || '',
+      escalation_2: escalationMatrix.escalation_2 || '',
+      escalation_3: escalationMatrix.escalation_3 || '',
+      critical_escalation: escalationMatrix.critical_escalation || '',
+      cbo: escalationMatrix.cbo || '',
+      cto: escalationMatrix.cto || '',
+      ceo: escalationMatrix.ceo || '',
     });
     setSelectedProducts(initiativePartner.initiative_partner_products?.map((p: any) => p.product_id) || []);
     setMediaSourceType(sourceType);
@@ -473,6 +504,28 @@ const InitiativeForm = () => {
 
         // Sync features
         await upsertFeatures.mutateAsync({ initiativePartnerId, features });
+
+        const escalationMatrix = {
+          escalation_1: data.escalation_1?.trim() || undefined,
+          escalation_2: data.escalation_2?.trim() || undefined,
+          escalation_3: data.escalation_3?.trim() || undefined,
+          critical_escalation: data.critical_escalation?.trim() || undefined,
+          cbo: data.cbo?.trim() || undefined,
+          cto: data.cto?.trim() || undefined,
+          ceo: data.ceo?.trim() || undefined,
+        } satisfies EscalationMatrix;
+        const cleanedEscalationMatrix = Object.fromEntries(
+          Object.entries(escalationMatrix).filter(([, value]) => value)
+        ) as EscalationMatrix;
+        const existingSupportDetails = initiativePartners?.find((partner) => partner.id === initiativePartnerId)?.support_details;
+
+        if (Object.keys(cleanedEscalationMatrix).length > 0 || existingSupportDetails) {
+          await upsertSupportEscalationMatrix.mutateAsync({
+            initiativePartnerId,
+            initiativeId: id,
+            escalationMatrix: cleanedEscalationMatrix,
+          });
+        }
 
         // Upload PDFs
         for (const pdf of pdfUploads) {
@@ -1118,6 +1171,44 @@ const InitiativeForm = () => {
                           <FormMessage />
                         </FormItem>
                       )} />
+                    </div>
+
+                    <Separator />
+
+                    {/* Support Escalation Matrix (Optional) */}
+                    <div className="space-y-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        Support Escalation Matrix <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Add the contact name, email, phone number, or other details for each escalation level.
+                      </p>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {([
+                          ['escalation_1', 'Escalation 1'],
+                          ['escalation_2', 'Escalation 2'],
+                          ['escalation_3', 'Escalation 3'],
+                          ['critical_escalation', 'Critical Escalation'],
+                          ['cbo', 'CBO'],
+                          ['cto', 'CTO'],
+                          ['ceo', 'CEO'],
+                        ] as const).map(([name, label]) => (
+                          <FormField key={name} control={partnerForm.control} name={name} render={({ field }) => (
+                            <FormItem className={name === 'ceo' ? 'md:col-span-2' : ''}>
+                              <FormLabel>{label}</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Name, email, phone, or contact details"
+                                  className="min-h-[72px]"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                        ))}
+                      </div>
                     </div>
 
                     <Separator />
