@@ -448,6 +448,7 @@ export type Database = {
       support_details: {
         Row: {
           created_at: string
+          escalation_matrix: Json
           faq: Json | null
           id: string
           initiative_partner_id: string
@@ -460,6 +461,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          escalation_matrix?: Json
           faq?: Json | null
           id?: string
           initiative_partner_id: string
@@ -472,6 +474,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          escalation_matrix?: Json
           faq?: Json | null
           id?: string
           initiative_partner_id?: string

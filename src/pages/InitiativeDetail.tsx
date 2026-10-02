@@ -30,6 +30,16 @@ const formatCurrency = (value: any, currency?: string) => {
   return `${symbol}${Number(value).toLocaleString()}`;
 };
 
+const escalationLevels = [
+  ['escalation_1', 'Escalation 1'],
+  ['escalation_2', 'Escalation 2'],
+  ['escalation_3', 'Escalation 3'],
+  ['critical_escalation', 'Critical Escalation'],
+  ['cbo', 'CBO'],
+  ['cto', 'CTO'],
+  ['ceo', 'CEO'],
+] as const;
+
 // ─── Secure Media Player ─────────────────────────────────────────────────────
 
 const SecureMediaPlayer = ({ mediaUrl, mediaTitle, mediaType }: { mediaUrl: string; mediaTitle?: string; mediaType?: string }) => {
@@ -595,6 +605,38 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ip.support_details.known_issues}</p>
                     </div>
                   )}
+                  {(() => {
+                    const matrix = ip.support_details.escalation_matrix;
+                    const populatedLevels = escalationLevels.filter(([key]) =>
+                      typeof matrix?.[key] === 'string' && matrix[key].trim().length > 0
+                    );
+
+                    if (populatedLevels.length === 0) return null;
+
+                    return (
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Escalation Matrix</p>
+                        <div className="overflow-hidden rounded-lg border border-border/60">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/30">
+                                <TableHead className="text-xs">Level</TableHead>
+                                <TableHead className="text-xs">Contact Details</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {populatedLevels.map(([key, label]) => (
+                                <TableRow key={key}>
+                                  <TableCell className="text-sm font-medium whitespace-nowrap">{label}</TableCell>
+                                  <TableCell className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{matrix[key]}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   </>
                 ) : null}
               </div>

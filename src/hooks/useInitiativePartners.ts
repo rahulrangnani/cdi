@@ -10,6 +10,7 @@ export type InitiativePartner = Tables<'initiative_partners'> & {
   partner?: Tables<'partners'>;
   initiative_partner_products?: InitiativePartnerProduct[];
   partner_features?: Tables<'partner_features'>[];
+  support_details?: Tables<'support_details'> | null;
 };
 export type InitiativePartnerInsert = TablesInsert<'initiative_partners'>;
 export type InitiativePartnerUpdate = TablesUpdate<'initiative_partners'>;
@@ -27,7 +28,8 @@ export const useInitiativePartners = (initiativeId: string) => {
             *,
             product:products (*)
           ),
-          partner_features (*)
+          partner_features (*),
+          support_details (*)
         `)
         .eq('initiative_id', initiativeId)
         .order('created_at', { ascending: false });
@@ -52,7 +54,8 @@ export const useInitiativePartner = (id: string) => {
             *,
             product:products (*)
           ),
-          partner_features (*)
+          partner_features (*),
+          support_details (*)
         `)
         .eq('id', id)
         .single();
