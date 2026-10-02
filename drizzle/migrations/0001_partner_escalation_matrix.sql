@@ -1,0 +1,1 @@
+ALTER TABLE public.partners ADD COLUMN IF NOT EXISTS escalation_matrix jsonb NOT NULL DEFAULT '{}'::jsonb;

@@ -337,6 +337,7 @@ export type Database = {
           contact_name: string | null
           contact_phone: string | null
           created_at: string
+          escalation_matrix: Json
           id: string
           logo_url: string | null
           name: string
@@ -353,6 +354,7 @@ export type Database = {
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string
+          escalation_matrix?: Json
           id?: string
           logo_url?: string | null
           name: string
@@ -369,6 +371,7 @@ export type Database = {
           contact_name?: string | null
           contact_phone?: string | null
           created_at?: string
+          escalation_matrix?: Json
           id?: string
           logo_url?: string | null
           name?: string
