@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ESCALATION_LEVELS, EscalationLevelKey, normalizeEscalationContact } from '@/lib/escalation';
 
 const partnerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -38,16 +39,14 @@ const partnerSchema = z.object({
   support_email: z.string().email().optional().or(z.literal('')),
   support_phone: z.string().optional(),
   support_hours: z.string().optional(),
-  escalation_1: z.string().optional(),
-  escalation_2: z.string().optional(),
-  escalation_3: z.string().optional(),
-  critical_escalation: z.string().optional(),
-  cbo: z.string().optional(),
-  cto: z.string().optional(),
-  ceo: z.string().optional(),
+  escalation_1_name: z.string().optional(), escalation_1_email: z.string().email().optional().or(z.literal('')), escalation_1_mobile: z.string().optional(),
+  escalation_2_name: z.string().optional(), escalation_2_email: z.string().email().optional().or(z.literal('')), escalation_2_mobile: z.string().optional(),
+  escalation_3_name: z.string().optional(), escalation_3_email: z.string().email().optional().or(z.literal('')), escalation_3_mobile: z.string().optional(),
+  critical_escalation_name: z.string().optional(), critical_escalation_email: z.string().email().optional().or(z.literal('')), critical_escalation_mobile: z.string().optional(),
+  cbo_name: z.string().optional(), cbo_email: z.string().email().optional().or(z.literal('')), cbo_mobile: z.string().optional(),
+  cto_name: z.string().optional(), cto_email: z.string().email().optional().or(z.literal('')), cto_mobile: z.string().optional(),
+  ceo_name: z.string().optional(), ceo_email: z.string().email().optional().or(z.literal('')), ceo_mobile: z.string().optional(),
 });
-
-const ESC_LEVELS = [['escalation_1', 'Escalation 1'], ['escalation_2', 'Escalation 2'], ['escalation_3', 'Escalation 3'], ['critical_escalation', 'Critical Escalation'], ['cbo', 'CBO'], ['cto', 'CTO'], ['ceo', 'CEO']] as const;
 
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -75,13 +74,7 @@ const PartnerForm = () => {
       support_email: '',
       support_phone: '',
       support_hours: '',
-      escalation_1: '',
-      escalation_2: '',
-      escalation_3: '',
-      critical_escalation: '',
-      cbo: '',
-      cto: '',
-      ceo: '',
+      ...Object.fromEntries(ESCALATION_LEVELS.flatMap(([key]) => [`${key}_name`, `${key}_email`, `${key}_mobile`].map((field) => [field, '']))),
     },
   });
 
@@ -99,13 +92,10 @@ const PartnerForm = () => {
         support_email: partner.support_email || '',
         support_phone: partner.support_phone || '',
         support_hours: partner.support_hours || '',
-        escalation_1: ((partner as any).escalation_matrix?.escalation_1 as string) || '',
-        escalation_2: ((partner as any).escalation_matrix?.escalation_2 as string) || '',
-        escalation_3: ((partner as any).escalation_matrix?.escalation_3 as string) || '',
-        critical_escalation: ((partner as any).escalation_matrix?.critical_escalation as string) || '',
-        cbo: ((partner as any).escalation_matrix?.cbo as string) || '',
-        cto: ((partner as any).escalation_matrix?.cto as string) || '',
-        ceo: ((partner as any).escalation_matrix?.ceo as string) || '',
+        ...Object.fromEntries(ESCALATION_LEVELS.flatMap(([key]) => {
+          const contact = normalizeEscalationContact((partner as any).escalation_matrix?.[key]);
+          return [[`${key}_name`, contact.name || ''], [`${key}_email`, contact.email || ''], [`${key}_mobile`, contact.mobile || '']];
+        })),
       });
     }
   }, [partner, form]);
@@ -124,7 +114,14 @@ const PartnerForm = () => {
         support_email: data.support_email || null,
         support_phone: data.support_phone || null,
         support_hours: data.support_hours || null,
-        escalation_matrix: Object.fromEntries(ESC_LEVELS.map(([k]) => [k, ((data as any)[k] || '').trim()]).filter(([, v]) => v)),
+        escalation_matrix: Object.fromEntries(ESCALATION_LEVELS.map(([key]) => {
+          const contact = {
+            name: ((data as any)[`${key}_name`] || '').trim(),
+            email: ((data as any)[`${key}_email`] || '').trim(),
+            mobile: ((data as any)[`${key}_mobile`] || '').trim(),
+          };
+          return [key, Object.fromEntries(Object.entries(contact).filter(([, value]) => value))];
+        }).filter(([, contact]) => Object.keys(contact).length > 0)),
       };
       
       if (isEditing) {
@@ -361,21 +358,29 @@ const PartnerForm = () => {
               </div>
               <div className="mt-6">
                 <p className="text-sm font-semibold mb-3">Escalation Matrix</p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {ESC_LEVELS.map(([key, label]) => (
-                    <FormField
-                      key={key}
-                      control={form.control}
-                      name={key as keyof PartnerFormValues}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{label}</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Name - email - phone" {...field} value={(field.value as string) ?? ''} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                <div className="space-y-5">
+                  {ESCALATION_LEVELS.map(([key, label]) => (
+                    <div key={key} className="space-y-2">
+                      <p className="text-sm font-medium">{label}</p>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        {(['name', 'email', 'mobile'] as const).map((detail) => (
+                          <FormField
+                            key={detail}
+                            control={form.control}
+                            name={`${key}_${detail}` as keyof PartnerFormValues}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs capitalize">{detail === 'mobile' ? 'Mobile Number' : detail}</FormLabel>
+                                <FormControl>
+                                  <Input type={detail === 'email' ? 'email' : 'text'} placeholder={detail === 'name' ? 'Contact name' : detail === 'email' ? 'name@company.com' : '+91 98765 43210'} {...field} value={(field.value as string) ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
