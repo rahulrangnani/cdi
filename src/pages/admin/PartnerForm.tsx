@@ -360,8 +360,13 @@ const PartnerForm = () => {
                 <p className="text-sm font-semibold mb-3">Escalation Matrix</p>
                 <div className="space-y-5">
                   {ESCALATION_LEVELS.map(([key, label]) => (
-                    <div key={key} className="space-y-2">
-                      <p className="text-sm font-medium">{label}</p>
+                    <div key={key} className={`space-y-2 rounded-lg border p-3 ${key === 'critical_escalation' ? 'border-destructive/40 bg-destructive/5' : 'border-transparent'}`}>
+                      <p className={`flex items-center gap-2 text-sm font-medium ${key === 'critical_escalation' ? 'text-destructive' : ''}`}>
+                        {label}
+                        {key === 'critical_escalation' && (
+                          <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive">Critical</span>
+                        )}
+                      </p>
                       <div className="grid gap-3 md:grid-cols-3">
                         {(['name', 'email', 'mobile'] as const).map((detail) => (
                           <FormField

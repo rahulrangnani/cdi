@@ -40,8 +40,9 @@ const downloadTemplate = () => {
     ['3. Status must be "active" or "inactive" (defaults to active).'],
     ['4. Website must start with http:// or https://. Emails must be valid.'],
     ['5. Enter escalation Name, Email, and Mobile Number in their separate columns.'],
-    ['6. Partners whose name already exists are skipped.'],
-    ['7. After upload, link partners to initiatives from the admin Initiatives section.'],
+    ['6. Use the "Critical Escalation" columns for the highest-severity contact.'],
+    ['7. Partners whose name already exists are skipped.'],
+    ['8. After upload, link partners to initiatives from the admin Initiatives section.'],
   ]);
   info['!cols'] = [{ wch: 90 }];
   const wb = XLSX.utils.book_new();
