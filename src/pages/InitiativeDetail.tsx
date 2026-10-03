@@ -625,8 +625,8 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
                             </TableHeader>
                             <TableBody>
                               {populatedLevels.map(([key, label]) => (
-                                <TableRow key={key}>
-                                  <TableCell className="text-sm font-medium whitespace-nowrap">{label}</TableCell>
+                                <TableRow key={key} className={key === 'critical_escalation' ? 'bg-destructive/5' : undefined}>
+                                  <TableCell className={`text-sm font-medium whitespace-nowrap ${key === 'critical_escalation' ? 'text-destructive' : ''}`}>{label}</TableCell>
                                   <TableCell className="text-sm text-muted-foreground">{contacts[key].name || '—'}</TableCell>
                                   <TableCell className="text-sm text-muted-foreground break-all">{contacts[key].email || '—'}</TableCell>
                                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{contacts[key].mobile || '—'}</TableCell>
