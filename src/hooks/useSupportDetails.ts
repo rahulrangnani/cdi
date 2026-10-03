@@ -1,15 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { EscalationMatrix } from '@/lib/escalation';
 
-export type EscalationMatrix = {
-  escalation_1?: string;
-  escalation_2?: string;
-  escalation_3?: string;
-  critical_escalation?: string;
-  cbo?: string;
-  cto?: string;
-  ceo?: string;
-};
+export type { EscalationMatrix } from '@/lib/escalation';
 
 export const useUpsertSupportEscalationMatrix = () => {
   const queryClient = useQueryClient();
