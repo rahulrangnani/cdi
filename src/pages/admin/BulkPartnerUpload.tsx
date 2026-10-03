@@ -71,7 +71,7 @@ const BulkPartnerUpload = () => {
       if (!data.name) errors.push('Name required');
       if (data.website && !/^https?:\/\//i.test(data.website)) errors.push('Invalid website');
       const emailKeys = ['contact_email', 'support_email', ...ESC_KEYS.map((key) => `${key}_email`)];
-      emailKeys.forEach((k) => { if (data[k] && !EMAIL.test(data[k])) errors.push(`Invalid ${k.replaceAll('_', ' ')}`); });
+      emailKeys.forEach((k) => { if (data[k] && !EMAIL.test(data[k])) errors.push(`Invalid ${k.replace(/_/g, ' ')}`); });
       data.status = (data.status || 'active').toLowerCase();
       if (!['active', 'inactive'].includes(data.status)) errors.push('Status must be active/inactive');
       const key = data.name.toLowerCase();
