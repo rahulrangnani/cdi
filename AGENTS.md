@@ -1,3 +1,4 @@
 # Architecture Rules
 
-- Store partner support escalation contacts as JSON on the existing one-to-one support record, keeping support data initiative-partner scoped and extensible.- Partner-level escalation matrix (partners.escalation_matrix) is the default; initiative-partner support_details.escalation_matrix overrides per level. Why: enter contacts once, allow per-initiative exceptions.
+- Store each escalation level as a JSON contact object with separate `name`, `email`, and `mobile` properties; read legacy string values as names. Why: structured contacts remain searchable and backward compatible.
+- Partner-level `partners.escalation_matrix` is the default; initiative-partner `support_details.escalation_matrix` overrides individual contact properties. Why: enter contacts once while allowing per-initiative exceptions.

@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import { ESCALATION_LEVELS, hasEscalationContact, normalizeEscalationContact } from '@/lib/escalation';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -29,16 +30,6 @@ const formatCurrency = (value: any, currency?: string) => {
   const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '₹';
   return `${symbol}${Number(value).toLocaleString()}`;
 };
-
-const escalationLevels = [
-  ['escalation_1', 'Escalation 1'],
-  ['escalation_2', 'Escalation 2'],
-  ['escalation_3', 'Escalation 3'],
-  ['critical_escalation', 'Critical Escalation'],
-  ['cbo', 'CBO'],
-  ['cto', 'CTO'],
-  ['ceo', 'CEO'],
-] as const;
 
 // ─── Secure Media Player ─────────────────────────────────────────────────────
 
@@ -608,15 +599,14 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
                   </>
                 ) : null}
                 {(() => {
-                    const base = ((ip.partner as any)?.escalation_matrix ?? {}) as Record<string, string>;
-                    const over = ((ip.support_details as any)?.escalation_matrix ?? {}) as Record<string, string>;
-                    const matrix: Record<string, string> = { ...base };
-                    Object.entries(over).forEach(([k, v]) => {
-                      if (typeof v === 'string' && v.trim()) matrix[k] = v;
-                    });
-                    const populatedLevels = escalationLevels.filter(([key]) =>
-                      typeof matrix?.[key] === 'string' && matrix[key].trim().length > 0
-                    );
+                    const base = ((ip.partner as any)?.escalation_matrix ?? {}) as Record<string, unknown>;
+                    const over = ((ip.support_details as any)?.escalation_matrix ?? {}) as Record<string, unknown>;
+                    const contacts = Object.fromEntries(ESCALATION_LEVELS.map(([key]) => {
+                      const defaultContact = normalizeEscalationContact(base[key]);
+                      const overrideContact = normalizeEscalationContact(over[key]);
+                      return [key, { ...defaultContact, ...Object.fromEntries(Object.entries(overrideContact).filter(([, value]) => value)) }];
+                    }));
+                    const populatedLevels = ESCALATION_LEVELS.filter(([key]) => hasEscalationContact(contacts[key]));
 
                     if (populatedLevels.length === 0) return null;
 
@@ -628,14 +618,18 @@ const PartnerCard = ({ ip, copiedId, onCopy }: { ip: any; copiedId: string | nul
                             <TableHeader>
                               <TableRow className="bg-muted/30">
                                 <TableHead className="text-xs">Level</TableHead>
-                                <TableHead className="text-xs">Contact Details</TableHead>
+                                <TableHead className="text-xs">Name</TableHead>
+                                <TableHead className="text-xs">Email</TableHead>
+                                <TableHead className="text-xs">Mobile Number</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {populatedLevels.map(([key, label]) => (
                                 <TableRow key={key}>
                                   <TableCell className="text-sm font-medium whitespace-nowrap">{label}</TableCell>
-                                  <TableCell className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{matrix[key]}</TableCell>
+                                  <TableCell className="text-sm text-muted-foreground">{contacts[key].name || '—'}</TableCell>
+                                  <TableCell className="text-sm text-muted-foreground break-all">{contacts[key].email || '—'}</TableCell>
+                                  <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{contacts[key].mobile || '—'}</TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
