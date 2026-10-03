@@ -53,6 +53,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
+import { ESCALATION_LEVELS, normalizeEscalationContact } from '@/lib/escalation';
 
 const initiativeSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -89,13 +90,13 @@ const partnerDetailsSchema = z.object({
   media_title: z.string().optional(),
   media_url: z.string().optional(),
   media_description: z.string().optional(),
-  escalation_1: z.string().optional(),
-  escalation_2: z.string().optional(),
-  escalation_3: z.string().optional(),
-  critical_escalation: z.string().optional(),
-  cbo: z.string().optional(),
-  cto: z.string().optional(),
-  ceo: z.string().optional(),
+  escalation_1_name: z.string().optional(), escalation_1_email: z.string().email().optional().or(z.literal('')), escalation_1_mobile: z.string().optional(),
+  escalation_2_name: z.string().optional(), escalation_2_email: z.string().email().optional().or(z.literal('')), escalation_2_mobile: z.string().optional(),
+  escalation_3_name: z.string().optional(), escalation_3_email: z.string().email().optional().or(z.literal('')), escalation_3_mobile: z.string().optional(),
+  critical_escalation_name: z.string().optional(), critical_escalation_email: z.string().email().optional().or(z.literal('')), critical_escalation_mobile: z.string().optional(),
+  cbo_name: z.string().optional(), cbo_email: z.string().email().optional().or(z.literal('')), cbo_mobile: z.string().optional(),
+  cto_name: z.string().optional(), cto_email: z.string().email().optional().or(z.literal('')), cto_mobile: z.string().optional(),
+  ceo_name: z.string().optional(), ceo_email: z.string().email().optional().or(z.literal('')), ceo_mobile: z.string().optional(),
 });
 
 type PartnerFormValues = z.infer<typeof partnerDetailsSchema>;
@@ -197,13 +198,7 @@ const InitiativeForm = () => {
       media_title: '',
       media_url: '',
       media_description: '',
-      escalation_1: '',
-      escalation_2: '',
-      escalation_3: '',
-      critical_escalation: '',
-      cbo: '',
-      cto: '',
-      ceo: '',
+      ...Object.fromEntries(ESCALATION_LEVELS.flatMap(([key]) => [`${key}_name`, `${key}_email`, `${key}_mobile`].map((field) => [field, '']))),
     },
   });
 
@@ -277,13 +272,7 @@ const InitiativeForm = () => {
       media_title: '',
       media_url: '',
       media_description: '',
-      escalation_1: '',
-      escalation_2: '',
-      escalation_3: '',
-      critical_escalation: '',
-      cbo: '',
-      cto: '',
-      ceo: '',
+      ...Object.fromEntries(ESCALATION_LEVELS.flatMap(([key]) => [`${key}_name`, `${key}_email`, `${key}_mobile`].map((field) => [field, '']))),
     });
     setSelectedProducts([]);
     setMediaSourceType('link');
@@ -336,13 +325,10 @@ const InitiativeForm = () => {
       media_title: initiativePartner.media_title || '',
       media_url: initiativePartner.media_url || '',
       media_description: initiativePartner.media_description || '',
-      escalation_1: escalationMatrix.escalation_1 || '',
-      escalation_2: escalationMatrix.escalation_2 || '',
-      escalation_3: escalationMatrix.escalation_3 || '',
-      critical_escalation: escalationMatrix.critical_escalation || '',
-      cbo: escalationMatrix.cbo || '',
-      cto: escalationMatrix.cto || '',
-      ceo: escalationMatrix.ceo || '',
+      ...Object.fromEntries(ESCALATION_LEVELS.flatMap(([key]) => {
+        const contact = normalizeEscalationContact(escalationMatrix[key]);
+        return [[`${key}_name`, contact.name || ''], [`${key}_email`, contact.email || ''], [`${key}_mobile`, contact.mobile || '']];
+      })),
     });
     setSelectedProducts(initiativePartner.initiative_partner_products?.map((p: any) => p.product_id) || []);
     setMediaSourceType(sourceType);
@@ -505,18 +491,14 @@ const InitiativeForm = () => {
         // Sync features
         await upsertFeatures.mutateAsync({ initiativePartnerId, features });
 
-        const escalationMatrix = {
-          escalation_1: data.escalation_1?.trim() || undefined,
-          escalation_2: data.escalation_2?.trim() || undefined,
-          escalation_3: data.escalation_3?.trim() || undefined,
-          critical_escalation: data.critical_escalation?.trim() || undefined,
-          cbo: data.cbo?.trim() || undefined,
-          cto: data.cto?.trim() || undefined,
-          ceo: data.ceo?.trim() || undefined,
-        } satisfies EscalationMatrix;
-        const cleanedEscalationMatrix = Object.fromEntries(
-          Object.entries(escalationMatrix).filter(([, value]) => value)
-        ) as EscalationMatrix;
+        const cleanedEscalationMatrix = Object.fromEntries(ESCALATION_LEVELS.map(([key]) => {
+          const contact = {
+            name: ((data as any)[`${key}_name`] || '').trim(),
+            email: ((data as any)[`${key}_email`] || '').trim(),
+            mobile: ((data as any)[`${key}_mobile`] || '').trim(),
+          };
+          return [key, Object.fromEntries(Object.entries(contact).filter(([, value]) => value))];
+        }).filter(([, contact]) => Object.keys(contact).length > 0)) as EscalationMatrix;
         const existingSupportDetails = initiativePartners?.find((partner) => partner.id === initiativePartnerId)?.support_details;
 
         if (Object.keys(cleanedEscalationMatrix).length > 0 || existingSupportDetails) {
@@ -1181,32 +1163,23 @@ const InitiativeForm = () => {
                         <Users className="h-4 w-4" />
                         Support Escalation Matrix <span className="text-xs font-normal text-muted-foreground">(Optional)</span>
                       </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Add the contact name, email, phone number, or other details for each escalation level.
-                      </p>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        {([
-                          ['escalation_1', 'Escalation 1'],
-                          ['escalation_2', 'Escalation 2'],
-                          ['escalation_3', 'Escalation 3'],
-                          ['critical_escalation', 'Critical Escalation'],
-                          ['cbo', 'CBO'],
-                          ['cto', 'CTO'],
-                          ['ceo', 'CEO'],
-                        ] as const).map(([name, label]) => (
-                          <FormField key={name} control={partnerForm.control} name={name} render={({ field }) => (
-                            <FormItem className={name === 'ceo' ? 'md:col-span-2' : ''}>
-                              <FormLabel>{label}</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Name, email, phone, or contact details"
-                                  className="min-h-[72px]"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
+                      <p className="text-sm text-muted-foreground">Add separate contact details for each escalation level.</p>
+                      <div className="space-y-5">
+                        {ESCALATION_LEVELS.map(([key, label]) => (
+                          <div key={key} className="space-y-2">
+                            <p className="text-sm font-medium">{label}</p>
+                            <div className="grid gap-3 md:grid-cols-3">
+                              {(['name', 'email', 'mobile'] as const).map((detail) => (
+                                <FormField key={detail} control={partnerForm.control} name={`${key}_${detail}`} render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-xs capitalize">{detail === 'mobile' ? 'Mobile Number' : detail}</FormLabel>
+                                    <FormControl><Input type={detail === 'email' ? 'email' : 'text'} placeholder={detail === 'name' ? 'Contact name' : detail === 'email' ? 'name@company.com' : '+91 98765 43210'} {...field} /></FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )} />
+                              ))}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>

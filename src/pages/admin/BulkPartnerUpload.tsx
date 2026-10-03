@@ -11,16 +11,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Download, Upload, Loader2, FileSpreadsheet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { ESCALATION_LEVELS } from '@/lib/escalation';
 
 const COLUMNS: [string, string][] = [
   ['Partner Name*', 'name'], ['Website', 'website'], ['Partner Type', 'partner_type'],
   ['Status', 'status'], ['Contact Name', 'contact_name'], ['Contact Email', 'contact_email'],
   ['Contact Phone', 'contact_phone'], ['Support Email', 'support_email'],
   ['Support Phone', 'support_phone'], ['Support Hours', 'support_hours'],
-  ['Escalation 1', 'escalation_1'], ['Escalation 2', 'escalation_2'], ['Escalation 3', 'escalation_3'],
-  ['Critical Escalation', 'critical_escalation'], ['CBO', 'cbo'], ['CTO', 'cto'], ['CEO', 'ceo'],
+  ...ESCALATION_LEVELS.flatMap(([key, label]) => [
+    [`${label} Name`, `${key}_name`], [`${label} Email`, `${key}_email`], [`${label} Mobile Number`, `${key}_mobile`],
+  ] as [string, string][]),
 ];
-const ESC_KEYS = ['escalation_1', 'escalation_2', 'escalation_3', 'critical_escalation', 'cbo', 'cto', 'ceo'];
+const ESC_KEYS = ESCALATION_LEVELS.map(([key]) => key);
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface Row { data: Record<string, string>; errors: string[]; duplicate?: boolean }
@@ -28,7 +30,7 @@ interface Row { data: Record<string, string>; errors: string[]; duplicate?: bool
 const downloadTemplate = () => {
   const example = ['Acme Verify', 'https://acme.com', 'Technology Provider', 'active', 'John Doe', 'john@acme.com',
     '+91 98765 43210', 'support@acme.com', '+91 1800 000 000', '9 AM - 6 PM IST',
-    'Asha - asha@acme.com - 9876500001', 'Ravi - ravi@acme.com - 9876500002', '', 'Ops Head - ops@acme.com', '', '', ''];
+    'Asha', 'asha@acme.com', '9876500001', 'Ravi', 'ravi@acme.com', '9876500002', ...Array(15).fill('')];
   const ws = XLSX.utils.aoa_to_sheet([COLUMNS.map((c) => c[0]), example]);
   ws['!cols'] = COLUMNS.map(() => ({ wch: 24 }));
   const info = XLSX.utils.aoa_to_sheet([
@@ -37,7 +39,7 @@ const downloadTemplate = () => {
     ['2. Only "Partner Name*" is required. All other columns are optional.'],
     ['3. Status must be "active" or "inactive" (defaults to active).'],
     ['4. Website must start with http:// or https://. Emails must be valid.'],
-    ['5. Escalation cells are free text, e.g. "Name - email - phone".'],
+    ['5. Enter escalation Name, Email, and Mobile Number in their separate columns.'],
     ['6. Partners whose name already exists are skipped.'],
     ['7. After upload, link partners to initiatives from the admin Initiatives section.'],
   ]);
@@ -68,7 +70,8 @@ const BulkPartnerUpload = () => {
       const errors: string[] = [];
       if (!data.name) errors.push('Name required');
       if (data.website && !/^https?:\/\//i.test(data.website)) errors.push('Invalid website');
-      ['contact_email', 'support_email'].forEach((k) => { if (data[k] && !EMAIL.test(data[k])) errors.push(`Invalid ${k.replace('_', ' ')}`); });
+      const emailKeys = ['contact_email', 'support_email', ...ESC_KEYS.map((key) => `${key}_email`)];
+      emailKeys.forEach((k) => { if (data[k] && !EMAIL.test(data[k])) errors.push(`Invalid ${k.replaceAll('_', ' ')}`); });
       data.status = (data.status || 'active').toLowerCase();
       if (!['active', 'inactive'].includes(data.status)) errors.push('Status must be active/inactive');
       const key = data.name.toLowerCase();
@@ -85,8 +88,11 @@ const BulkPartnerUpload = () => {
     const payload = valid.map(({ data }) => {
       const p: Record<string, unknown> = { escalation_matrix: {} };
       COLUMNS.forEach(([, k]) => {
-        if (ESC_KEYS.includes(k)) { if (data[k]) (p.escalation_matrix as Record<string, string>)[k] = data[k]; }
-        else p[k] = data[k] || null;
+        if (!ESC_KEYS.some((key) => k.startsWith(`${key}_`))) p[k] = data[k] || null;
+      });
+      ESC_KEYS.forEach((key) => {
+        const contact = Object.fromEntries(['name', 'email', 'mobile'].map((detail) => [detail, data[`${key}_${detail}`]]).filter(([, value]) => value));
+        if (Object.keys(contact).length) (p.escalation_matrix as Record<string, unknown>)[key] = contact;
       });
       return p;
     });

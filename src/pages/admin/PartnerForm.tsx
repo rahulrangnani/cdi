@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ESCALATION_LEVELS, EscalationLevelKey, normalizeEscalationContact } from '@/lib/escalation';
+import { ESCALATION_LEVELS, normalizeEscalationContact } from '@/lib/escalation';
 
 const partnerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
